@@ -43,14 +43,39 @@
         return output;
     };
 
-    var parse = function (input) {
+    var parse = function (input, depth, state) {
+        if (state === undefined) {
+            state = { index: 0 };
+        }
+
+        var node = [];
+        for (; state.index < input.length;) {
+            var token = input[state.index];
+            state.index++;
+
+            if (token === '(') {
+                node.push(parse(input, depth + 1, state));
+            } else if (token === ')') {
+                if (depth <= 0) {
+                    throw 'Syntax error';
+                } else {
+                    break;
+                }
+            } else {
+                node.push(token);
+            }
+        }
+
+        return node;
     };
 
     var process = function (input) {
         var output = '';
-        var tokens = tokenize(input);
-        for (var i = 0, count = tokens.length; i < count; i++) {
-            output += 'Token: ' + tokens[i] + '\n';
+        try {
+            var tree = parse(tokenize(input));
+            output = JSON.stringify(tree);
+        } catch (error) {
+            return error;
         }
 
         return output;
