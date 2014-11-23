@@ -43,30 +43,34 @@
         return output;
     };
 
-    var parse = function (input, depth, state) {
-        if (state === undefined) {
-            state = { index: 0 };
-        }
-
+    var parseRecursive = function (input, depth, state) {
         var node = [];
         for (; state.index < input.length;) {
             var token = input[state.index];
             state.index++;
 
             if (token === '(') {
-                node.push(parse(input, depth + 1, state));
+                node.push(parseRecursive(input, depth + 1, state));
             } else if (token === ')') {
                 if (depth <= 0) {
-                    throw 'Syntax error';
+                    throw 'Extra ")"';
                 } else {
-                    break;
+                    return node;
                 }
             } else {
                 node.push(token);
             }
         }
 
+        if (depth > 0) {
+            throw 'Missing ")"';
+        }
+
         return node;
+    };
+
+    var parse = function (input) {
+        return parseRecursive(input, 0, { index: 0 });
     };
 
     var process = function (input) {
