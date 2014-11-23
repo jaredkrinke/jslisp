@@ -1,94 +1,97 @@
-﻿$(function () {
-    var tokenize = function (input) {
-        var output = [];
-        var inToken = false;
-        var tokenStart = 0;
-        for (var i = 0, count = input.length; i < count; i++) {
-            if (inToken) {
-                switch (input[i]) {
-                    case '(':
-                    case ')':
-                        output.push(input.slice(tokenStart, i));
-                        output.push(input[i]);
-                        inToken = false;
-                        break;
+﻿var stream = require('stream');
 
-                    case ' ':
-                        output.push(input.slice(tokenStart, i));
-                        inToken = false;
-                        break;
-                }
-            } else {
-                switch (input[i]) {
-                    case '(':
-                    case ')':
-                        output.push(input[i]);
-                        break;
-
-                    case ' ':
-                        break;
-
-                    default:
-                        inToken = true;
-                        tokenStart = i;
-                        break;
-                }
-            }
-        }
-
+var tokenize = function (input) {
+    var output = [];
+    var inToken = false;
+    var tokenStart = 0;
+    for (var i = 0, count = input.length; i < count; i++) {
         if (inToken) {
-            output.push(input.slice(tokenStart));
-        }
+            switch (input[i]) {
+                case '(':
+                case ')':
+                    output.push(input.slice(tokenStart, i));
+                    output.push(input[i]);
+                    inToken = false;
+                    break;
 
-        return output;
-    };
+                case ' ':
+                case '\n':
+                    output.push(input.slice(tokenStart, i));
+                    inToken = false;
+                    break;
+            }
+        } else {
+            switch (input[i]) {
+                case '(':
+                case ')':
+                    output.push(input[i]);
+                    break;
 
-    var parseRecursive = function (input, depth, state) {
-        var node = [];
-        for (; state.index < input.length;) {
-            var token = input[state.index];
-            state.index++;
+                case ' ':
+                case '\n':
+                    break;
 
-            if (token === '(') {
-                node.push(parseRecursive(input, depth + 1, state));
-            } else if (token === ')') {
-                if (depth <= 0) {
-                    throw 'Extra ")"';
-                } else {
-                    return node;
-                }
-            } else {
-                node.push(token);
+                default:
+                    inToken = true;
+                    tokenStart = i;
+                    break;
             }
         }
+    }
 
-        if (depth > 0) {
-            throw 'Missing ")"';
+    if (inToken) {
+        output.push(input.slice(tokenStart));
+    }
+
+    return output;
+};
+
+var parseRecursive = function (input, depth, state) {
+    var node = [];
+    for (; state.index < input.length;) {
+        var token = input[state.index];
+        state.index++;
+
+        if (token === '(') {
+            node.push(parseRecursive(input, depth + 1, state));
+        } else if (token === ')') {
+            if (depth <= 0) {
+                throw 'Extra ")"';
+            } else {
+                return node;
+            }
+        } else {
+            node.push(token);
         }
+    }
 
-        return node;
-    };
+    if (depth > 0) {
+        throw 'Missing ")"';
+    }
 
-    var parse = function (input) {
-        return parseRecursive(input, 0, { index: 0 });
-    };
+    return node;
+};
 
-    var process = function (input) {
-        var output = '';
-        try {
-            var tree = parse(tokenize(input));
-            output = JSON.stringify(tree);
-        } catch (error) {
-            return error;
-        }
+var parse = function (input) {
+    return parseRecursive(input, 0, { index: 0 });
+};
 
-        return output;
-    };
+var execute = function (input) {
+    var output = '';
+    try {
+        var tree = parse(tokenize(input));
+        output = JSON.stringify(tree);
+    } catch (error) {
+        return error;
+    }
 
-    var input = $('#input');
-    var output = $('#output');
-    $('#execute').click(function (e) {
-        e.preventDefault();
-        output.text(process(input.text()));
-    });
+    return output;
+};
+
+var input = process.stdin;
+input.setEncoding('utf8');
+
+input.on('data', function (text) {
+    console.log(execute(text.slice(0, text.length - 2)));
 });
+
