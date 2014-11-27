@@ -79,30 +79,51 @@ var parse = function (input) {
 var defaultEnvironment = {};
 
 // Arithmetic
-defaultEnvironment['+'] = function (a, b) { return parseFloat(a) + parseFloat(b); };
-defaultEnvironment['-'] = function (a, b) { return parseFloat(a) - parseFloat(b); };
-defaultEnvironment['*'] = function (a, b) { return parseFloat(a) * parseFloat(b); };
+defaultEnvironment['+'] = function () {
+    var result = 0;
+    for (var i = 0, count = arguments.length; i < count; i++) {
+        result += parseFloat(arguments[i]);
+    }
+    return result;
+};
+
+defaultEnvironment['-'] = function (a, b) {
+    if (b !== undefined) {
+        return parseFloat(a) - parseFloat(b);
+    }
+
+    return -parseFloat(a);
+};
+
+defaultEnvironment['*'] = function () {
+    var result = 1;
+    for (var i = 0, count = arguments.length; i < count; i++) {
+        result *= parseFloat(arguments[i]);
+    }
+    return result;
+};
+
 defaultEnvironment['/'] = function (a, b) { return parseFloat(a) / parseFloat(b); };
 
 var evaluateInternal = function (environment, expression) {
     var result;
     if (Array.isArray(expression)) {
-        // Function application
-        var functionName = expression[0];
-        var f = environment[functionName];
+        // Combination (function application)
+        var operator = expression[0];
+        var f = environment[operator];
 
         // TODO: Special forms
         if (!f) {
-            throw 'No function named: ' + functionName;
+            throw 'No function named: ' + operator;
         }
 
         // Evaluate subexpressions
-        var arguments = [];
+        var operands = [];
         for (var i = 1, count = expression.length; i < count; i++) {
-            arguments[i - 1] = evaluateInternal(environment, expression[i]);
+            operands[i - 1] = evaluateInternal(environment, expression[i]);
         }
 
-        result = f.apply(null, arguments);
+        result = f.apply(null, operands);
     } else {
         // Literal
         result = expression;
