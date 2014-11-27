@@ -110,6 +110,12 @@ defaultEnvironment['*'] = function () {
 
 defaultEnvironment['/'] = function (a, b) { return parseFloat(a) / parseFloat(b); };
 
+defaultEnvironment['>'] = function (a, b) { return parseFloat(a) > parseFloat(b); };
+defaultEnvironment['>='] = function (a, b) { return parseFloat(a) >= parseFloat(b); };
+defaultEnvironment['='] = function (a, b) { return parseFloat(a) === parseFloat(b); };
+defaultEnvironment['<='] = function (a, b) { return parseFloat(a) <= parseFloat(b); };
+defaultEnvironment['<'] = function (a, b) { return parseFloat(a) < parseFloat(b); };
+
 // Special forms
 specialForms = {};
 
@@ -155,6 +161,18 @@ specialForms.define = function (environments, nameExpression, valueExpression) {
         }
 
         environments[0][identifier] = evaluateInternal(environments, valueExpression);
+    }
+};
+
+specialForms.cond = function (environments) {
+    for (var i = 1, count = arguments.length; i < count; i++) {
+        var clause = arguments[i];
+        var predicate = clause[0];
+        var consequentExpression = clause[1];
+
+        if (predicate === 'else' || evaluateInternal(environments, predicate) === true) {
+            return evaluateInternal(environments, consequentExpression);
+        }
     }
 };
 
