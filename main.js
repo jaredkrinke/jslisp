@@ -152,7 +152,7 @@ specialForms.define = function (environments, nameExpression, valueExpression) {
         environments[0][name] = {
             name: name,
             formalParameters: identifiers.slice(1),
-            body: valueExpression
+            body: Array.prototype.slice.call(arguments, 2)
         };
     } else {
         // Variable: name
@@ -258,7 +258,12 @@ var evaluateInternal = function (environments, expression) {
                     localEnvironment[formalParameters[i]] = operands[i];
                 }
 
-                result = evaluateInternal([localEnvironment].concat(environments), f.body);
+                // Evaluate each expression in the local environment and return the last value
+                var localEnvironments = [localEnvironment].concat(environments);
+                var body = f.body;
+                for (var i = 0, count = body.length; i < count; i++) {
+                    result = evaluateInternal(localEnvironments, body[i]);
+                }
             }
         }
     } else {
