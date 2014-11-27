@@ -73,14 +73,49 @@ var parseRecursive = function (input, depth, state) {
 };
 
 var parse = function (input) {
-    return parseRecursive(input, 0, { index: 0 });
+    return parseRecursive(input, 0, { index: 0 })[0];
 };
 
-var execute = function (input) {
+var defaultEnvironment = {};
+
+// Arithmetic
+defaultEnvironment['+'] = function (a, b) { return parseFloat(a) + parseFloat(b); };
+defaultEnvironment['-'] = function (a, b) { return parseFloat(a) - parseFloat(b); };
+defaultEnvironment['*'] = function (a, b) { return parseFloat(a) * parseFloat(b); };
+defaultEnvironment['/'] = function (a, b) { return parseFloat(a) / parseFloat(b); };
+
+var evaluateInternal = function (environment, expression) {
+    var result;
+    if (Array.isArray(expression)) {
+        // Function application
+        var functionName = expression[0];
+        var f = environment[functionName];
+
+        // TODO: Special forms
+        if (!f) {
+            throw 'No function named: ' + functionName;
+        }
+
+        // Evaluate subexpressions
+        var arguments = [];
+        for (var i = 1, count = expression.length; i < count; i++) {
+            arguments[i - 1] = evaluateInternal(environment, expression[i]);
+        }
+
+        result = f.apply(null, arguments);
+    } else {
+        // Literal
+        result = expression;
+    }
+    return result;
+};
+
+var evaluate = function (input) {
     var output = '';
     try {
         var tree = parse(tokenize(input));
-        output = JSON.stringify(tree);
+        output = JSON.stringify(evaluateInternal(defaultEnvironment, tree));
+        //output = JSON.stringify(tree);
     } catch (error) {
         return error;
     }
@@ -92,6 +127,6 @@ var input = process.stdin;
 input.setEncoding('utf8');
 
 input.on('data', function (text) {
-    console.log(execute(text.slice(0, text.length - 2)));
+    console.log(evaluate(text.slice(0, text.length - 2)));
 });
 
