@@ -176,6 +176,44 @@ specialForms.cond = function (environments) {
     }
 };
 
+specialForms.if = function (environments, predicate, consequent, alternative) {
+    if (evaluateInternal(environments, predicate) === true) {
+        return evaluateInternal(environments, consequent);
+    } else {
+        return evaluateInternal(environments, alternative);
+    }
+};
+
+specialForms.and = function (environments) {
+    var result;
+    for (var i = 1, count = arguments.length; i < count; i++) {
+        result = evaluateInternal(environments, arguments[i]);
+        if (result !== true) {
+            return false;
+        }
+    }
+
+    return result;
+};
+
+specialForms.or = function (environments) {
+    for (var i = 1, count = arguments.length; i < count; i++) {
+        var result = evaluateInternal(environments, arguments[i]);
+        if (result !== false) {
+            return result;
+        }
+    }
+
+    return false;
+};
+
+specialForms.not = function (environments, expression) {
+    if (evaluateInternal(environments, expression) === false) {
+        return true;
+    }
+    return false;
+};
+
 var lookup = function (environments, identifier) {
     var result;
     for (var i = 0, count = environments.length; result === undefined && i < count; i++) {
