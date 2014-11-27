@@ -76,6 +76,11 @@ var parse = function (input) {
     return parseRecursive(input, 0, { index: 0 })[0];
 };
 
+var identifierPattern = /[^0-9,#();"'`|[\]{}][^,#();"'`|[\]{}]*/i;
+var parseIdentifier = function (text) {
+    return (!Array.isArray(text) && identifierPattern.test(text)) ? text : null;
+};
+
 var defaultEnvironment = {};
 
 // Arithmetic
@@ -105,28 +110,49 @@ defaultEnvironment['*'] = function () {
 
 defaultEnvironment['/'] = function (a, b) { return parseFloat(a) / parseFloat(b); };
 
+// Special forms
+specialForms = {};
+specialForms.define = function (environment, nameExpression, valueExpression) {
+    var identifier = parseIdentifier(nameExpression);
+    if (!identifier) {
+        throw 'Invalid identifier: ' + nameExpression;
+    }
+
+    environment[identifier] = evaluateInternal(environment, valueExpression);
+};
+
 var evaluateInternal = function (environment, expression) {
     var result;
     if (Array.isArray(expression)) {
-        // Combination (function application)
+        // Combination
         var operator = expression[0];
         var f = environment[operator];
 
-        // TODO: Special forms
-        if (!f) {
-            throw 'No function named: ' + operator;
-        }
+        var specialForm;
+        if (!Array.isArray(operator) && (specialForm = specialForms[operator])) {
+            // Special form
+            return specialForm.apply(null, [environment].concat(expression.slice(1)));
+        } else {
+            // Function
+            if (!f) {
+                throw 'No function named: ' + operator;
+            }
 
-        // Evaluate subexpressions
-        var operands = [];
-        for (var i = 1, count = expression.length; i < count; i++) {
-            operands[i - 1] = evaluateInternal(environment, expression[i]);
-        }
+            // Evaluate subexpressions
+            var operands = [];
+            for (var i = 1, count = expression.length; i < count; i++) {
+                operands[i - 1] = evaluateInternal(environment, expression[i]);
+            }
 
-        result = f.apply(null, operands);
+            result = f.apply(null, operands);
+        }
     } else {
         // Literal
-        result = expression;
+        // TODO: How to distinguish literals? Also handle strings
+        var result = parseFloat(expression);
+        if (isNaN(result)) {
+            result = environment[expression];
+        }
     }
     return result;
 };
@@ -135,7 +161,7 @@ var evaluate = function (input) {
     var output = '';
     try {
         var tree = parse(tokenize(input));
-        output = JSON.stringify(evaluateInternal(defaultEnvironment, tree));
+        output = evaluateInternal(defaultEnvironment, tree);
         //output = JSON.stringify(tree);
     } catch (error) {
         return error;
@@ -148,6 +174,9 @@ var input = process.stdin;
 input.setEncoding('utf8');
 
 input.on('data', function (text) {
-    console.log(evaluate(text.slice(0, text.length - 2)));
+    var result = evaluate(text.slice(0, text.length - 2));
+    if (result !== undefined) {
+        console.log(result);
+    }
 });
 
