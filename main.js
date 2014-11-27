@@ -112,26 +112,71 @@ defaultEnvironment['/'] = function (a, b) { return parseFloat(a) / parseFloat(b)
 
 // Special forms
 specialForms = {};
-specialForms.define = function (environment, nameExpression, valueExpression) {
-    var identifier = parseIdentifier(nameExpression);
-    if (!identifier) {
-        throw 'Invalid identifier: ' + nameExpression;
-    }
 
-    environment[identifier] = evaluateInternal(environment, valueExpression);
+specialForms.quote = function (environments, datum) {
+    return datum;
 };
 
-var evaluateInternal = function (environment, expression) {
+specialForms.define = function (environments, nameExpression, valueExpression) {
+    if (Array.isArray(nameExpression)) {
+        // Function: (name, arg1, arg2, ...)
+        if (nameExpression.length < 1) {
+            throw 'define: No identifier supplied'
+        }
+
+        // Parse identifiers
+        var identifierSet = {};
+        var identifiers = [];
+        for (var i = 0, count = nameExpression.length; i < count; i++) {
+            var identifier = parseIdentifier(nameExpression[i]);
+            if (!identifier) {
+                throw 'define: Invalid identifier: ' + nameExpression[i];
+            }
+
+            if (identifier in identifierSet) {
+                throw 'define: Duplicate formal parameter: ' + identifier;
+            }
+
+            identifiers[i] = identifier;
+            identifierSet[identifier] = true;
+        }
+
+        // Save the function
+        // TODO: Support recursion
+        environments[0][identifiers[0]] = {
+            formalParameters: identifiers.slice(1),
+            body: valueExpression
+        };
+    } else {
+        // Variable: name
+        var identifier = parseIdentifier(nameExpression);
+        if (!identifier) {
+            throw 'define: Invalid identifier: ' + nameExpression;
+        }
+
+        environments[0][identifier] = evaluateInternal(environments, valueExpression);
+    }
+};
+
+var lookup = function (environments, identifier) {
+    var result;
+    for (var i = 0, count = environments.length; result === undefined && i < count; i++) {
+        result = environments[i][identifier];
+    }
+    return result;
+};
+
+var evaluateInternal = function (environments, expression) {
     var result;
     if (Array.isArray(expression)) {
         // Combination
         var operator = expression[0];
-        var f = environment[operator];
+        var f = lookup(environments, operator);
 
         var specialForm;
         if (!Array.isArray(operator) && (specialForm = specialForms[operator])) {
             // Special form
-            return specialForm.apply(null, [environment].concat(expression.slice(1)));
+            return specialForm.apply(null, [environments].concat(expression.slice(1)));
         } else {
             // Function
             if (!f) {
@@ -141,17 +186,29 @@ var evaluateInternal = function (environment, expression) {
             // Evaluate subexpressions
             var operands = [];
             for (var i = 1, count = expression.length; i < count; i++) {
-                operands[i - 1] = evaluateInternal(environment, expression[i]);
+                operands[i - 1] = evaluateInternal(environments, expression[i]);
             }
 
-            result = f.apply(null, operands);
+            if (typeof (f) === 'function') {
+                // Built-in function
+                result = f.apply(null, operands);
+            } else if (f.formalParameters && f.body) {
+                // Custom function
+                var formalParameters = f.formalParameters;
+                var localEnvironment = {};
+                for (var i = 0, count = formalParameters.length; i < count; i++) {
+                    localEnvironment[formalParameters[i]] = operands[i];
+                }
+
+                result = evaluateInternal([localEnvironment].concat(environments), f.body);
+            }
         }
     } else {
         // Literal
         // TODO: How to distinguish literals? Also handle strings
         var result = parseFloat(expression);
         if (isNaN(result)) {
-            result = environment[expression];
+            result = lookup(environments, expression);
         }
     }
     return result;
@@ -161,7 +218,7 @@ var evaluate = function (input) {
     var output = '';
     try {
         var tree = parse(tokenize(input));
-        output = evaluateInternal(defaultEnvironment, tree);
+        output = evaluateInternal([defaultEnvironment], tree);
         //output = JSON.stringify(tree);
     } catch (error) {
         return error;
