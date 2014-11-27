@@ -148,8 +148,9 @@ specialForms.define = function (environments, nameExpression, valueExpression) {
         }
 
         // Save the function
-        // TODO: Support recursion
-        environments[0][identifiers[0]] = {
+        var name = identifiers[0];
+        environments[0][name] = {
+            name: name,
             formalParameters: identifiers.slice(1),
             body: valueExpression
         };
@@ -252,6 +253,7 @@ var evaluateInternal = function (environments, expression) {
                 // Custom function
                 var formalParameters = f.formalParameters;
                 var localEnvironment = {};
+                localEnvironment[f.name] = f;
                 for (var i = 0, count = formalParameters.length; i < count; i++) {
                     localEnvironment[formalParameters[i]] = operands[i];
                 }
