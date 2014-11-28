@@ -276,11 +276,20 @@
         return result;
     };
 
-    var evaluate = function (input) {
+    var evaluate = function (environment, input) {
+        var tree = parse(tokenize(input));
+        var localEnvironment = environment || {};
+        return evaluateInternal([localEnvironment, defaultEnvironment], tree);
+    };
+
+    var Interpreter = function () {
+        this.localEnvironment = {};
+    }
+
+    Interpreter.prototype.evaluate = function (input) {
         var output;
         try {
-            var tree = parse(tokenize(input));
-            output = evaluateInternal([defaultEnvironment], tree);
+            output = evaluate(this.localEnvironment, input);
         } catch (error) {
             return error;
         }
@@ -289,5 +298,5 @@
     };
 
     // Exports
-    exports.evaluate = evaluate;
-})(typeof (exports) === 'undefined' ? (jsLisp = {}) : exports);
+    exports.Interpreter = Interpreter;
+})(typeof (exports) === 'undefined' ? (JSLisp = {}) : exports);

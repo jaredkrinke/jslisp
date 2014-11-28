@@ -1,12 +1,15 @@
-﻿var jsLisp = require('./jsLisp.js');
+﻿var JSLisp = require('./jsLisp.js');
 var assert = require('assert');
 var test = function (sectionName, testCases) {
+    var interpreter = new JSLisp.Interpreter();
+
     console.log('Running: ' + sectionName);
+
     for (var i = 0, count = testCases.length; i < count; i++) {
         var testCase = testCases[i];
         var input = testCase[0];
         var expectedOutput = testCase[1];
-        var actualOutput = jsLisp.evaluate(input);
+        var actualOutput = interpreter.evaluate(input);
         assert.deepEqual(actualOutput, expectedOutput, 'Input:\n' + input + '\n\nExpected:\n' + expectedOutput + '\n\nActual:\n' + actualOutput + '\n');
     }
 };
