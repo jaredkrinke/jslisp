@@ -258,6 +258,7 @@
                     }
 
                     // Evaluate each expression in the local environment and return the last value
+                    // TODO: Tail recursion?
                     var localEnvironments = [localEnvironment].concat(environments);
                     var body = f.body;
                     for (var i = 0, count = body.length; i < count; i++) {
