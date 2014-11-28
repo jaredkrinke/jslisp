@@ -108,6 +108,8 @@
     };
 
     defaultEnvironment['/'] = function (a, b) { return parseFloat(a) / parseFloat(b); };
+    defaultEnvironment['remainder'] = function (a, b) { return parseFloat(a) % parseFloat(b); };
+    defaultEnvironment['random'] = function (n) { return Math.floor(Math.random() * n); };
 
     defaultEnvironment['>'] = function (a, b) { return parseFloat(a) > parseFloat(b); };
     defaultEnvironment['>='] = function (a, b) { return parseFloat(a) >= parseFloat(b); };
