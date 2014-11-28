@@ -232,18 +232,24 @@
         return result;
     };
 
+    var isFunctionValue = function (o) {
+        return o.formalParameters && o.body;
+    }
+
     var evaluateInternal = function (environments, expression) {
         var result;
         if (Array.isArray(expression)) {
             // Combination
             var operator = expression[0];
-            var f = lookup(environments, operator);
 
             var specialForm;
             if (!Array.isArray(operator) && (specialForm = specialForms[operator])) {
                 // Special form
                 return specialForm.apply(null, [environments].concat(expression.slice(1)));
             } else {
+                // Can be an identifier or a function value
+                var f = lookup(environments, operator);
+
                 // Function
                 if (!f) {
                     throw 'No function named: ' + operator;
@@ -286,6 +292,10 @@
             var result = parseFloat(expression);
             if (isNaN(result)) {
                 result = lookup(environments, expression);
+
+                if (result === undefined) {
+                    throw 'No variable named: ' + expression;
+                }
             }
         }
         return result;
