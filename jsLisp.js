@@ -124,6 +124,18 @@
         return datum;
     };
 
+    var createFunction = function (name, formalParameters, body) {
+        return {
+            name: name,
+            formalParameters: formalParameters,
+            body: body
+        };
+    };
+
+    specialForms.lambda = function (environments, formalParameters) {
+        return createFunction(null, formalParameters, Array.prototype.slice.call(arguments, 2));
+    };
+
     specialForms.define = function (environments, nameExpression, valueExpression) {
         if (Array.isArray(nameExpression)) {
             // Function: (name, arg1, arg2, ...)
@@ -150,11 +162,7 @@
 
             // Save the function
             var name = identifiers[0];
-            environments[0][name] = {
-                name: name,
-                formalParameters: identifiers.slice(1),
-                body: Array.prototype.slice.call(arguments, 2)
-            };
+            environments[0][name] = createFunction(name, identifiers.slice(1), Array.prototype.slice.call(arguments, 2));
         } else {
             // Variable: name
             var identifier = parseIdentifier(nameExpression);
@@ -254,7 +262,11 @@
                     // Custom function
                     var formalParameters = f.formalParameters;
                     var localEnvironment = {};
-                    localEnvironment[f.name] = f;
+
+                    if (f.name) {
+                        localEnvironment[f.name] = f;
+                    }
+
                     for (var i = 0, count = formalParameters.length; i < count; i++) {
                         localEnvironment[formalParameters[i]] = operands[i];
                     }
