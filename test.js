@@ -14,6 +14,7 @@ var test = function (sectionName, testCases) {
     }
 };
 
+var start = new Date();
 test('1.1.1', [
     ['486', 486],
     ['(+ 137 349)', 486],
@@ -108,3 +109,7 @@ test('1.2.2', [
 //test('', [
 //    ['', ],
 //]);
+
+var end = new Date();
+console.log('Execution time: ' + ((end - start) / 1000) + 's');
+
