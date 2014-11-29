@@ -118,22 +118,24 @@
     defaultEnvironment['<'] = function (a, b) { return parseFloat(a) < parseFloat(b); };
 
     // Special forms
+    // TODO: Do special forms really need a separate lookup table?
     specialForms = {};
 
     specialForms.quote = function (environments, datum) {
         return datum;
     };
 
-    var createFunction = function (name, formalParameters, body) {
+    var createFunction = function (name, closingEnvironments, formalParameters, body) {
         return {
             name: name,
+            closingEnvironments: closingEnvironments,
             formalParameters: formalParameters,
             body: body
         };
     };
 
     specialForms.lambda = function (environments, formalParameters) {
-        return createFunction(null, formalParameters, Array.prototype.slice.call(arguments, 2));
+        return createFunction(null, environments, formalParameters, Array.prototype.slice.call(arguments, 2));
     };
 
     specialForms.define = function (environments, nameExpression, valueExpression) {
@@ -162,7 +164,8 @@
 
             // Save the function
             var name = identifiers[0];
-            environments[0][name] = createFunction(name, identifiers.slice(1), Array.prototype.slice.call(arguments, 2));
+            // TODO: Should there be a closing environment?
+            environments[0][name] = createFunction(name, null, identifiers.slice(1), Array.prototype.slice.call(arguments, 2));
         } else {
             // Variable: name
             var identifier = parseIdentifier(nameExpression);
@@ -247,13 +250,11 @@
                 // Special form
                 return specialForm.apply(null, [environments].concat(expression.slice(1)));
             } else {
-                // Can be an identifier or a function value
-                var f = lookup(environments, operator);
-
-                // Function
-                if (!f) {
-                    throw 'No function named: ' + operator;
+                if (expression.length < 1) {
+                    throw 'Invalid combination: ()';
                 }
+
+                var f = evaluateInternal(environments, expression[0]);
 
                 // Evaluate subexpressions
                 var operands = [];
@@ -264,7 +265,7 @@
                 if (typeof (f) === 'function') {
                     // Built-in function
                     result = f.apply(null, operands);
-                } else if (f.formalParameters && f.body) {
+                } else if (isFunctionValue(f)) {
                     // Custom function
                     var formalParameters = f.formalParameters;
                     var localEnvironment = {};
@@ -279,11 +280,13 @@
 
                     // Evaluate each expression in the local environment and return the last value
                     // TODO: Tail recursion?
-                    var localEnvironments = [localEnvironment].concat(environments);
+                    var localEnvironments = [localEnvironment].concat(f.closingEnvironments || environments);
                     var body = f.body;
                     for (var i = 0, count = body.length; i < count; i++) {
                         result = evaluateInternal(localEnvironments, body[i]);
                     }
+                } else {
+                    throw 'Non-function used as an operator: ' + f;
                 }
             }
         } else {
