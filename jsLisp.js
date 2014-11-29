@@ -177,6 +177,36 @@
         }
     };
 
+    var createLet = function (sequential) {
+        return function (environments, bindings) {
+            // Evaluate all the expressions and bind the values
+            var localEnvironment = {};
+            var localEnvironments = [localEnvironment].concat(environments);
+            for (var i = 0, count = bindings.length; i < count; i++) {
+                var binding = bindings[i];
+                var identifier = parseIdentifier(binding[0]);
+                var initializeExpression = binding[1];
+                if (initializeExpression) {
+                    localEnvironment[identifier] = evaluateInternal(sequential ? localEnvironments : environments, initializeExpression);
+                } else {
+                    localEnvironment[identifier] = null;
+                }
+            }
+    
+            // Execute the body
+            var result;
+            for (var i = 2, count = arguments.length; i < count; i++) {
+                result = evaluateInternal(localEnvironments, arguments[i]);
+            }
+    
+            return result;
+        };
+    };
+
+    specialForms.let = createLet(false);
+    specialForms['let*'] = createLet(true);
+    // TODO: letrec?
+
     specialForms.cond = function (environments) {
         for (var i = 1, count = arguments.length; i < count; i++) {
             var clause = arguments[i];
