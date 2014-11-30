@@ -121,6 +121,8 @@
         car: function (pair) { return pair.head; },
         cdr: function (pair) { return pair.tail; },
         nil: null,
+        'null?': function (x) { return x === null; },
+        'pair?': function (x) { return x.head !== undefined; },
         list: function () {
             var list = defaultEnvironment.nil;
             for (var i = arguments.length -1; i >= 0; i--) {
