@@ -80,47 +80,47 @@
         return (!Array.isArray(text) && identifierPattern.test(text)) ? text : null;
     };
 
-    var defaultEnvironment = {};
+    var defaultEnvironment = {
+        // Arithmetic
+        '+': function () {
+            var result = 0;
+            for (var i = 0, count = arguments.length; i < count; i++) {
+                result += parseFloat(arguments[i]);
+            }
+            return result;
+        },
 
-    // Arithmetic
-    defaultEnvironment['+'] = function () {
-        var result = 0;
-        for (var i = 0, count = arguments.length; i < count; i++) {
-            result += parseFloat(arguments[i]);
-        }
-        return result;
+        '-': function (a, b) {
+            if (b !== undefined) {
+                return parseFloat(a) - parseFloat(b);
+            }
+
+            return -parseFloat(a);
+        },
+
+        '*': function () {
+            var result = 1;
+            for (var i = 0, count = arguments.length; i < count; i++) {
+                result *= parseFloat(arguments[i]);
+            }
+            return result;
+        },
+
+        '/': function (a, b) { return parseFloat(a) / parseFloat(b); },
+        remainder: function (a, b) { return parseFloat(a) % parseFloat(b); },
+        random: function (n) { return Math.floor(Math.random() * n); },
+
+        '>': function (a, b) { return parseFloat(a) > parseFloat(b); },
+        '>=': function (a, b) { return parseFloat(a) >= parseFloat(b); },
+        '=': function (a, b) { return parseFloat(a) === parseFloat(b); },
+        '<=': function (a, b) { return parseFloat(a) <= parseFloat(b); },
+        '<': function (a, b) { return parseFloat(a) < parseFloat(b); },
+
+        // Lists
+        cons: function (a, b) { return { head: a, tail: b }; },
+        car: function (pair) { return pair.head; },
+        cdr: function (pair) { return pair.tail; },
     };
-
-    defaultEnvironment['-'] = function (a, b) {
-        if (b !== undefined) {
-            return parseFloat(a) - parseFloat(b);
-        }
-
-        return -parseFloat(a);
-    };
-
-    defaultEnvironment['*'] = function () {
-        var result = 1;
-        for (var i = 0, count = arguments.length; i < count; i++) {
-            result *= parseFloat(arguments[i]);
-        }
-        return result;
-    };
-
-    defaultEnvironment['/'] = function (a, b) { return parseFloat(a) / parseFloat(b); };
-    defaultEnvironment['remainder'] = function (a, b) { return parseFloat(a) % parseFloat(b); };
-    defaultEnvironment['random'] = function (n) { return Math.floor(Math.random() * n); };
-
-    defaultEnvironment['>'] = function (a, b) { return parseFloat(a) > parseFloat(b); };
-    defaultEnvironment['>='] = function (a, b) { return parseFloat(a) >= parseFloat(b); };
-    defaultEnvironment['='] = function (a, b) { return parseFloat(a) === parseFloat(b); };
-    defaultEnvironment['<='] = function (a, b) { return parseFloat(a) <= parseFloat(b); };
-    defaultEnvironment['<'] = function (a, b) { return parseFloat(a) < parseFloat(b); };
-
-    // Lists
-    defaultEnvironment.cons = function (a, b) { return { head: a, tail: b }; }
-    defaultEnvironment.car = function (pair) { return pair.head; }
-    defaultEnvironment.cdr = function (pair) { return pair.tail; }
 
     // Special forms
     // TODO: Do special forms really need a separate lookup table?
