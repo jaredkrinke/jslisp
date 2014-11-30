@@ -135,11 +135,12 @@
 
         // Lists
         cons: function (a, b) { return { head: a, tail: b }; },
-        car: function (pair) { return pair.head; },
-        cdr: function (pair) { return pair.tail; },
+        // TODO: Lists should all be linked lists (some are currently arrays...)
+        car: function (pair) { return Array.isArray(pair) ? pair[0] : pair.head; },
+        cdr: function (pair) { return Array.isArray(pair) ? pair.slice(1) : pair.tail; },
         nil: null,
-        'null?': function (x) { return x === null; },
-        'pair?': function (x) { return x.head !== undefined; },
+        'null?': function (x) { return Array.isArray(x) ? (x.length === 0) : (x === null); },
+        'pair?': function (x) { return Array.isArray(x) ? true : (x.head !== undefined); },
         list: function () {
             var list = defaultEnvironment.nil;
             for (var i = arguments.length -1; i >= 0; i--) {
