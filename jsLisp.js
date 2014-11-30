@@ -8,6 +8,7 @@
                 switch (input[i]) {
                     case '(':
                     case ')':
+                    case '\'':
                         output.push(input.slice(tokenStart, i));
                         output.push(input[i]);
                         inToken = false;
@@ -23,6 +24,7 @@
                 switch (input[i]) {
                     case '(':
                     case ')':
+                    case '\'':
                         output.push(input[i]);
                         break;
 
@@ -45,22 +47,37 @@
         return output;
     };
 
+    var parseSingleRecursive = function (input, state) {
+        var token = input[state.index];
+        state.index++;
+
+        if (token.length === 1) {
+            switch (token[0]) {
+                case '(':
+                    return parseRecursive(input, depth + 1, state);
+
+                case '\'':
+                    return ['quote', parseSingleRecursive(input, state)];
+                    break;
+            }
+        }
+
+        return token;
+    };
+
     var parseRecursive = function (input, depth, state) {
         var node = [];
         for (; state.index < input.length;) {
-            var token = input[state.index];
-            state.index++;
-
-            if (token === '(') {
-                node.push(parseRecursive(input, depth + 1, state));
-            } else if (token === ')') {
+            var element = parseSingleRecursive(input, state);
+            if (element === ')') {
                 if (depth <= 0) {
                     throw 'Extra ")"';
                 } else {
                     return node;
                 }
+                break;
             } else {
-                node.push(token);
+                node.push(element);
             }
         }
 
