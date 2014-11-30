@@ -120,6 +120,14 @@
         cons: function (a, b) { return { head: a, tail: b }; },
         car: function (pair) { return pair.head; },
         cdr: function (pair) { return pair.tail; },
+        nil: null,
+        list: function () {
+            var list = defaultEnvironment.nil;
+            for (var i = arguments.length -1; i >= 0; i--) {
+                list = defaultEnvironment.cons(arguments[i], list);
+            }
+            return list;
+        },
         // Note: Continued below
 
         // Output
