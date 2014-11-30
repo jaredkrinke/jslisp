@@ -117,6 +117,11 @@
     defaultEnvironment['<='] = function (a, b) { return parseFloat(a) <= parseFloat(b); };
     defaultEnvironment['<'] = function (a, b) { return parseFloat(a) < parseFloat(b); };
 
+    // Lists
+    defaultEnvironment.cons = function (a, b) { return { head: a, tail: b }; }
+    defaultEnvironment.car = function (pair) { return pair.head; }
+    defaultEnvironment.cdr = function (pair) { return pair.tail; }
+
     // Special forms
     // TODO: Do special forms really need a separate lookup table?
     specialForms = {};
