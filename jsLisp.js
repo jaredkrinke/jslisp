@@ -125,6 +125,9 @@
         // Output
         display: function (x) { process.stdout.write(x.toString()); },
         newline: function (x) { process.stdout.write('\n'); },
+
+        // Error handling
+        error: function (x) { throw x; },
     };
 
     // cadr, caddr, etc. (up to a depth of 4)
