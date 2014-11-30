@@ -122,6 +122,23 @@
         cdr: function (pair) { return pair.tail; },
     };
 
+    // cadr, caddr, etc. (up to a depth of 4)
+    for (var depth = 2; depth <= 4; depth++) {
+        // Create functions for each possible sequence of this depth
+        for (var i = 0, count = (1 << depth); i < count; i++) {
+            // Walk through each bit and create the label (1 means head, 0 means tail)
+            var label = '';
+            for (var j = 0; j < depth; j++) {
+                label += ((i >> j) & 1) ? 'a' : 'd';
+            }
+
+            // E.g. caddr is implemented as car(cddr(...))
+            defaultEnvironment['c' + label + 'r'] = (function (firstOperation, secondOperation) {
+                return function (pair) { return firstOperation(secondOperation(pair)); };
+            })(defaultEnvironment['c' + label.slice(0, 1) + 'r'], defaultEnvironment['c' + label.slice(1) + 'r']);
+        }
+    }
+
     // Special forms
     // TODO: Do special forms really need a separate lookup table?
     specialForms = {};
