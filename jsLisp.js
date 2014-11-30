@@ -120,6 +120,11 @@
         cons: function (a, b) { return { head: a, tail: b }; },
         car: function (pair) { return pair.head; },
         cdr: function (pair) { return pair.tail; },
+        // Note: Continued below
+
+        // Output
+        display: function (x) { process.stdout.write(x.toString()); },
+        newline: function (x) { process.stdout.write('\n'); },
     };
 
     // cadr, caddr, etc. (up to a depth of 4)
