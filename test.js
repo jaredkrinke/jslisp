@@ -137,6 +137,37 @@ test('1.2.6', [
     ['(fast-prime? 29 10)', true],
 ]);
 
+// Note: Skipped 1.3
+
+test('2.1.1', [
+    ['(define x (cons 1 2))'],
+    ['(car x)', 1],
+    ['(cdr x)', 2],
+    ['(define x (cons 1 2))'],
+    ['(define y (cons 3 4))'],
+    ['(define z (cons x y))'],
+    ['(car (car z))', 1],
+    ['(car (cdr z))', 3],
+    ['(define (add-rat x y) (make-rat (+ (* (numer x) (denom y)) (* (numer y) (denom x))) (* (denom x) (denom y))))'],
+    ['(define (sub-rat x y) (make-rat (- (* (numer x) (denom y)) (* (numer y) (denom x))) (* (denom x) (denom y))))'],
+    ['(define (mul-rat x y) (make-rat (* (numer x) (numer y)) (* (denom x) (denom y))))'],
+    ['(define (div-rat x y) (make-rat (* (numer x) (denom y)) (* (denom x) (numer y))))'],
+    ['(define (equal-rat? x y) (= (* (numer x) (denom y)) (* (numer y) (denom x))))'],
+    ['(define (make-rat n d) (cons n d))'],
+    ['(define (numer x) (car x))'],
+    ['(define (denom x) (cdr x))'],
+    ['(define one-half (make-rat 1 2))'],
+    ['(numer one-half)', 1],
+    ['(denom one-half)', 2],
+    ['(define one-third (make-rat 1 3))'],
+    ['(numer (add-rat one-half one-third))', 5],
+    ['(denom (mul-rat one-half one-third))', 6],
+    ['(numer (add-rat one-third one-third))', 6],
+    ['(define (gcd a b) (if (= b 0) a (gcd b (remainder a b))))'],
+    ['(define (make-rat n d) (let ((g (gcd n d))) (cons (/ n g) (/ d g))))'],
+    ['(denom (add-rat one-third one-third))', 3],
+]);
+
 //test('', [
 //    ['', ],
 //]);
