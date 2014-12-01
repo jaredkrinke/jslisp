@@ -105,6 +105,38 @@ test('1.2.2', [
     ['(count-change 100)', 292],
 ]);
 
+test('1.2.4', [
+    ['(define (square x) (* x x))'],
+    ['(define (expt b n) (if (= n 0) 1 (* b (expt b (- n 1)))))'],
+    ['(define (expt b n) (expt-iter b n 1))'],
+    ['(define (expt-iter b counter product) (if (= counter 0) product (expt-iter b (- counter 1) (* b product))))'],
+    ['(expt 3 4)', 81],
+    ['(define (fast-expt b n) (cond ((= n 0) 1) ((even? n) (square (fast-expt b (/ n 2)))) (else (* b (fast-expt b (- n 1))))))'],
+    ['(define (even? n) (= (remainder n 2) 0))'],
+    ['(fast-expt 3 4)', 81],
+]);
+
+test('1.2.5', [
+    ['(define (gcd a b) (if (= b 0) a (gcd b (remainder a b))))'],
+    ['(gcd 27 18)', 9],
+]);
+
+test('1.2.6', [
+    ['(define (square x) (* x x))'],
+    ['(define (even? n) (= (remainder n 2) 0))'],
+    ['(define (smallest-divisor n) (find-divisor n 2))'],
+    ['(define (find-divisor n test-divisor) (cond ((> (square test-divisor) n) n) ((divides? test-divisor n) test-divisor) (else (find-divisor n (+ test-divisor 1)))))'],
+    ['(define (divides? a b) (= (remainder b a) 0))'],
+    ['(define (prime? n) (= n (smallest-divisor n)))'],
+    ['(prime? 28)', false],
+    ['(prime? 29)', true],
+    ['(define (expmod base exp m) (cond ((= exp 0) 1) ((even? exp) (remainder (square (expmod base (/ exp 2) m)) m)) (else (remainder (* base (expmod base (- exp 1) m)) m))))'],
+    ['(define (fermat-test n) (define (try-it a) (= (expmod a n n) a)) (try-it (+ 1 (random (- n 1)))))'],
+    ['(define (fast-prime? n times) (cond ((= times 0) true) ((fermat-test n) (fast-prime? n (- times 1))) (else false)))'],
+    ['(fast-prime? 28 10)', false],
+    ['(fast-prime? 29 10)', true],
+]);
+
 //test('', [
 //    ['', ],
 //]);

@@ -135,6 +135,8 @@
 
         // Symbols
         'eq?': function (a, b) { return a === b; },
+        'true': true,
+        'false': false,
 
         // Lists
         cons: function (a, b) { return { head: a, tail: b }; },
