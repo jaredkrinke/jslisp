@@ -133,6 +133,9 @@
         '<=': function (a, b) { return parseFloat(a) <= parseFloat(b); },
         '<': function (a, b) { return parseFloat(a) < parseFloat(b); },
 
+        // Symbols
+        'eq?': function (a, b) { return a === b; },
+
         // Lists
         cons: function (a, b) { return { head: a, tail: b }; },
         // TODO: Lists should all be linked lists (some are currently arrays...)
