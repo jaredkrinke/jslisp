@@ -198,37 +198,37 @@
     };
 
     specialForms.lambda = function (environments, formalParameters) {
-        return createFunction(null, environments, formalParameters, Array.prototype.slice.call(arguments, 2));
+        var identifierSet = {};
+        var identifiers = [];
+        for (var i = 0, count = formalParameters.length; i < count; i++) {
+            var identifier = parseIdentifier(formalParameters[i]);
+            if (!identifier) {
+                throw 'define: Invalid identifier: ' + formalParameters[i];
+            }
+        
+            if (identifier in identifierSet) {
+                throw 'define: Duplicate formal parameter: ' + identifier;
+            }
+        
+            identifiers[i] = identifier;
+            identifierSet[identifier] = true;
+        }
+
+        return createFunction(null, environments, identifiers, Array.prototype.slice.call(arguments, 2));
     };
 
     specialForms.define = function (environments, nameExpression, valueExpression) {
         if (Array.isArray(nameExpression)) {
-            // Function: (name, arg1, arg2, ...)
+            // Function: (define (name arg1 arg2 ...) exp1 exp2 ...)
+            // Translate to: (define name (lambda (arg1 arg2 ...) exp1 exp2 ...))
             if (nameExpression.length < 1) {
                 throw 'define: No identifier supplied'
             }
 
-            // Parse identifiers
-            var identifierSet = {};
-            var identifiers = [];
-            for (var i = 0, count = nameExpression.length; i < count; i++) {
-                var identifier = parseIdentifier(nameExpression[i]);
-                if (!identifier) {
-                    throw 'define: Invalid identifier: ' + nameExpression[i];
-                }
-
-                if (identifier in identifierSet) {
-                    throw 'define: Duplicate formal parameter: ' + identifier;
-                }
-
-                identifiers[i] = identifier;
-                identifierSet[identifier] = true;
-            }
-
-            // Save the function
-            var name = identifiers[0];
-            // TODO: Should there be a closing environment?
-            environments[0][name] = createFunction(name, null, identifiers.slice(1), Array.prototype.slice.call(arguments, 2));
+            return specialForms.define(environments, nameExpression[0], [
+                'lambda',
+                nameExpression.slice(1)
+            ].concat(Array.prototype.slice.call(arguments, 2)));
         } else {
             // Variable: name
             var identifier = parseIdentifier(nameExpression);
