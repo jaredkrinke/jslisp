@@ -168,6 +168,22 @@ test('2.1.1', [
     ['(denom (add-rat one-third one-third))', 3],
 ]);
 
+test('2.1.3', [
+    // TODO: String literals
+    // TODO: Debug this one... closing environment probably needs to be supplied...
+    ['(define (cons x y) (define (dispatch m) (cond ((= m 0) x) ((= m 1) y) (else (error -1)))) dispatch)'],
+    ['(define (car z) (z 0))'],
+    ['(define (cdr z) (z 1))'],
+    ['(define x (cons 1 2))'],
+    ['(car x)', 1],
+    ['(cdr x)', 2],
+    ['(define x (cons 1 2))'],
+    ['(define y (cons 3 4))'],
+    ['(define z (cons x y))'],
+    ['(car (car z))', 1],
+    ['(car (cdr z))', 3],
+]);
+
 //test('', [
 //    ['', ],
 //]);
