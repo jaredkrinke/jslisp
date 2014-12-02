@@ -188,9 +188,8 @@
         return datum;
     };
 
-    var createFunction = function (name, closingEnvironments, formalParameters, body) {
+    var createFunction = function (closingEnvironments, formalParameters, body) {
         return {
-            name: name,
             closingEnvironments: closingEnvironments,
             formalParameters: formalParameters,
             body: body
@@ -214,7 +213,7 @@
             identifierSet[identifier] = true;
         }
 
-        return createFunction(null, environments, identifiers, Array.prototype.slice.call(arguments, 2));
+        return createFunction(environments, identifiers, Array.prototype.slice.call(arguments, 2));
     };
 
     specialForms.define = function (environments, nameExpression, valueExpression) {
@@ -362,18 +361,13 @@
                     // Custom function
                     var formalParameters = f.formalParameters;
                     var localEnvironment = {};
-
-                    if (f.name) {
-                        localEnvironment[f.name] = f;
-                    }
-
                     for (var i = 0, count = formalParameters.length; i < count; i++) {
                         localEnvironment[formalParameters[i]] = operands[i];
                     }
 
                     // Evaluate each expression in the local environment and return the last value
                     // TODO: Tail recursion?
-                    var localEnvironments = [localEnvironment].concat(f.closingEnvironments || environments);
+                    var localEnvironments = [localEnvironment].concat(f.closingEnvironments);
                     var body = f.body;
                     for (var i = 0, count = body.length; i < count; i++) {
                         result = evaluateInternal(localEnvironments, body[i]);
