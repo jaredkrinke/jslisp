@@ -1,47 +1,96 @@
 ﻿(function (exports) {
+    var tokenizerState = {
+        initial: 0,
+        inToken: 1,
+        inString: 2,
+    };
+
     var tokenize = function (input) {
         var output = [];
-        var inToken = false;
+        var state = tokenizerState.initial;
         var tokenStart = 0;
         for (var i = 0, count = input.length; i < count; i++) {
-            if (inToken) {
-                switch (input[i]) {
-                    case '(':
-                    case ')':
-                    case '\'':
-                        output.push(input.slice(tokenStart, i));
-                        output.push(input[i]);
-                        inToken = false;
-                        break;
+            switch (state) {
+                case tokenizerState.initial:
+                    {
+                        switch (input[i]) {
+                            case '(':
+                            case ')':
+                            case '\'':
+                                output.push(input[i]);
+                                break;
 
-                    case ' ':
-                    case '\n':
-                        output.push(input.slice(tokenStart, i));
-                        inToken = false;
-                        break;
-                }
-            } else {
-                switch (input[i]) {
-                    case '(':
-                    case ')':
-                    case '\'':
-                        output.push(input[i]);
-                        break;
+                            case ' ':
+                            case '\n':
+                                break;
 
-                    case ' ':
-                    case '\n':
-                        break;
+                            case '"':
+                                state = tokenizerState.inString;
+                                tokenStart = i;
+                                break;
 
-                    default:
-                        inToken = true;
-                        tokenStart = i;
-                        break;
-                }
+                            default:
+                                state = tokenizerState.inToken;
+                                tokenStart = i;
+                                break;
+                        }
+                    }
+                    break;
+
+                case tokenizerState.inToken:
+                    {
+                        switch (input[i]) {
+                            case '(':
+                            case ')':
+                            case '\'':
+                                output.push(input.slice(tokenStart, i));
+                                output.push(input[i]);
+                                state = tokenizerState.initial;
+                                break;
+
+                            case ' ':
+                            case '\n':
+                                output.push(input.slice(tokenStart, i));
+                                state = tokenizerState.initial;
+                                break;
+                        }
+                    }
+                    break;
+
+                case tokenizerState.inString:
+                    {
+                        switch (input[i]) {
+                            case '"':
+                                // Handle escape characters
+                                var text = '';
+                                for (var j = tokenStart; j <= i; j++) {
+                                    var character = input[j];
+                                    if (character !== '\\') {
+                                        text += character;
+                                    }
+                                }
+
+                                output.push(text);
+                                state = tokenizerState.initial;
+                                break;
+
+                            case '\\':
+                                i++;
+                                break;
+                        }
+                    }
+                    break;
             }
         }
 
-        if (inToken) {
-            output.push(input.slice(tokenStart));
+        switch (state) {
+            case tokenizerState.inToken:
+                output.push(input.slice(tokenStart));
+                break;
+        
+            case tokenizerState.inString:
+                throw 'Expected "';
+                break;
         }
 
         return output;
@@ -378,13 +427,16 @@
             }
         } else {
             // Literal
-            // TODO: How to distinguish literals? Also handle strings
             var result = parseFloat(expression);
             if (isNaN(result)) {
-                result = lookup(environments, expression);
+                if (typeof(expression) === 'string' && expression.length >= 1 && expression[0] === '"') {
+                    result = expression.slice(1, expression.length - 1);
+                } else {
+                    result = lookup(environments, expression);
 
-                if (result === undefined) {
-                    throw 'No variable named: ' + expression;
+                    if (result === undefined) {
+                        throw 'No variable named: ' + expression;
+                    }
                 }
             }
         }
