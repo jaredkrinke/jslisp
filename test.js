@@ -191,6 +191,7 @@ test('2.1.3', [
 ]);
 
 test('2.2.1', [
+    ['(define (abs x) (if (< x 0) (- x) x))'],
     ['(cons 1 (cons 2 (cons 3 (cons 4 nil))))', createList(1, 2, 3, 4)],
     ['(list 1 2 3 4)', createList(1, 2, 3, 4)],
     ['(define one-through-four (list 1 2 3 4))'],
@@ -210,6 +211,30 @@ test('2.2.1', [
     ['(define (append list1 list2) (if (null? list1) list2 (cons (car list1) (append (cdr list1) list2))))'],
     ['(append squares odds)', createList(1, 4, 9, 16, 25, 1, 3, 5, 7)],
     ['(append odds squares)', createList(1, 3, 5, 7, 1, 4, 9, 16, 25)],
+    ['(define (scale-list items factor) (if (null? items) nil (cons (* (car items) factor) (scale-list (cdr items) factor))))'],
+    ['(scale-list (list 1 2 3 4 5) 10)', createList(10, 20, 30, 40, 50)],
+    ['(define (map proc items) (if (null? items) nil (cons (proc (car items)) (map proc (cdr items)))))'],
+    ['(map abs (list -10 2.5 -11.6 17))', createList(10, 2.5, 11.6, 17)],
+    ['(map (lambda (x) (* x x)) (list 1 2 3 4))', createList(1, 4, 9, 16)],
+    ['(define (scale-list items factor) (map (lambda (x) (* x factor)) items))'],
+    ['(scale-list (list 1 2 3 4 5) 10)', createList(10, 20, 30, 40, 50)],
+]);
+
+test('2.2.2', [
+    ['(cons (list 1 2) (list 3 4))', createList(createList(1, 2), 3, 4)],
+    ['(define x (cons (list 1 2) (list 3 4)))'],
+    ['(define (length items) (if (null? items) 0 (+ 1 (length (cdr items)))))'],
+    ['(length x)', 3],
+    ['(define (count-leaves x) (cond ((null? x) 0)  ((not (pair? x)) 1) (else (+ (count-leaves (car x)) (count-leaves (cdr x))))))'],
+    ['(count-leaves x)', 4],
+    ['(list x x)', createList(createList(createList(1, 2), 3, 4), createList(createList(1, 2), 3, 4))],
+    ['(length (list x x))', 2],
+    ['(count-leaves (list x x))', 8],
+    ['(define (scale-tree tree factor) (cond ((null? tree) nil) ((not (pair? tree)) (* tree factor)) (else (cons (scale-tree (car tree) factor) (scale-tree (cdr tree) factor)))))'],
+    ['(scale-tree (list 1 (list 2 (list 3 4) 5) (list 6 7)) 10)', createList(10, createList(20, createList(30, 40), 50), createList(60, 70))],
+    ['(define (map proc items) (if (null? items) nil (cons (proc (car items)) (map proc (cdr items)))))'],
+    ['(define (scale-tree tree factor) (map (lambda (sub-tree) (if (pair? sub-tree) (scale-tree sub-tree factor) (* sub-tree factor))) tree))'],
+    ['(scale-tree (list 1 (list 2 (list 3 4) 5) (list 6 7)) 10)', createList(10, createList(20, createList(30, 40), 50), createList(60, 70))],
 ]);
 
 //test('', [
