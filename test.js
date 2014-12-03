@@ -14,6 +14,14 @@ var test = function (sectionName, testCases) {
     }
 };
 
+var createList = function () {
+    var list = null;
+    for (var i = arguments.length - 1; i >= 0; i--) {
+        list = { head: arguments[i], tail: list };
+    }
+    return list;
+};
+
 var start = new Date();
 test('1.1.1', [
     ['486', 486],
@@ -182,16 +190,26 @@ test('2.1.3', [
     ['(car (cdr z))', 3],
 ]);
 
-test('2.1.3', [
-    // TODO: Need a better way to reason over lists
-    ['(cons 1 (cons 2 (cons 3 (cons 4 nil))))', { head: 1, tail: { head: 2, tail: { head: 3, tail: { head: 4, tail: null}}}}],
-    ['(list 1 2 3 4)', { head: 1, tail: { head: 2, tail: { head: 3, tail: { head: 4, tail: null}}}}],
+test('2.2.1', [
+    ['(cons 1 (cons 2 (cons 3 (cons 4 nil))))', createList(1, 2, 3, 4)],
+    ['(list 1 2 3 4)', createList(1, 2, 3, 4)],
     ['(define one-through-four (list 1 2 3 4))'],
-    ['one-through-four', { head: 1, tail: { head: 2, tail: { head: 3, tail: { head: 4, tail: null}}}}],
+    ['one-through-four', createList(1, 2, 3, 4)],
     ['(car one-through-four)', 1],
-    ['(cdr one-through-four)', { head: 2, tail: { head: 3, tail: { head: 4, tail: null}}}],
+    ['(cdr one-through-four)', createList(2, 3, 4)],
     ['(car (cdr one-through-four))', 2],
-    ['(cons 5 one-through-four)', { head: 5, tail: { head: 1, tail: { head: 2, tail: { head: 3, tail: { head: 4, tail: null}}}}}],
+    ['(cons 5 one-through-four)', createList(5, 1, 2, 3, 4)],
+    ['(define (list-ref items n) (if (= n 0) (car items) (list-ref (cdr items) (- n 1))))'],
+    ['(define squares (list 1 4 9 16 25))'],
+    ['(list-ref squares 3)', 16],
+    ['(define (length items) (if (null? items) 0 (+ 1 (length (cdr items)))))'],
+    ['(define odds (list 1 3 5 7))'],
+    ['(length odds)', 4],
+    ['(define (length items) (define (length-iter a count) (if (null? a) count (length-iter (cdr a) (+ 1 count)))) (length-iter items 0))'],
+    ['(length odds)', 4],
+    ['(define (append list1 list2) (if (null? list1) list2 (cons (car list1) (append (cdr list1) list2))))'],
+    ['(append squares odds)', createList(1, 4, 9, 16, 25, 1, 3, 5, 7)],
+    ['(append odds squares)', createList(1, 3, 5, 7, 1, 4, 9, 16, 25)],
 ]);
 
 //test('', [
