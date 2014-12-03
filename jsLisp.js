@@ -449,6 +449,33 @@
         return evaluateInternal([localEnvironment, defaultEnvironment], tree);
     };
 
+    var format = function (value) {
+        var output;
+        if (value === null) {
+            output = '()';
+        } else if (value.head) {
+            var first = true;
+            output = '(';
+            for (; value !== null; value = value.tail) {
+                if (first) {
+                    first = false;
+                } else {
+                    output += ' ';
+                }
+
+                if (value.head === undefined) {
+                    return 'Improper list';
+                }
+                
+                output += format(value.head);
+            }
+            output += ')';
+        } else {
+            output = value.toString();
+        }
+        return output;
+    };
+
     var Interpreter = function () {
         this.localEnvironment = {};
     }
@@ -463,6 +490,8 @@
 
         return output;
     };
+
+    Interpreter.prototype.format = format;
 
     // Exports
     exports.Interpreter = Interpreter;
