@@ -96,54 +96,72 @@
         return output;
     };
 
-    var parseSingleRecursive = function (input, state) {
-        var token = input[state.index];
-        state.index++;
+    var createPair = function (head, tail) {
+        return { head: head, tail: tail };
+    };
 
-        if (token.length === 1) {
-            switch (token[0]) {
-                case '(':
-                    return parseRecursive(input, depth + 1, state);
+    var isPair = function (o) {
+        return o.head !== undefined;
+    };
 
-                case '\'':
-                    return ['quote', parseSingleRecursive(input, state)];
-                    break;
-            }
+    var createList = function () {
+        var list = null;
+        for (var i = arguments.length - 1; i >= 0; i--) {
+            list = createPair(arguments[i], list);
         }
+        return list;
+    };
 
-        return token;
+    // TODO: Better term since improper lists count?
+    var isList = function (o) {
+        return o === null || isPair(o);
+    };
+
+    var listToArray = function (list) {
+        var array = [];
+        for (; list !== null; list = list.tail) {
+            array.push(list.head);
+        }
+        return array;
     };
 
     var parseRecursive = function (input, depth, state) {
-        var node = [];
-        for (; state.index < input.length;) {
-            var element = parseSingleRecursive(input, state);
-            if (element === ')') {
-                if (depth <= 0) {
-                    throw 'Extra ")"';
-                } else {
-                    return node;
-                }
-                break;
-            } else {
-                node.push(element);
-            }
-        }
+        if (state.index < input.length) {
+            var token = input[state.index++];
+            var node = token;
+            if (token.length === 1) {
+                switch (token[0]) {
+                    case '(':
+                        node = parseRecursive(input, depth + 1, state);
+                        break;
 
-        if (depth > 0) {
+                    case ')':
+                        if (depth <= 0) {
+                            throw 'Extra ")"';
+                        }
+                        return null;
+
+                    case '\'':
+                        node = createPair('quote', parseRecursive(input, state));
+                        break;
+                }
+            }
+
+            return createPair(node, parseRecursive(input, depth, state));
+        } else if (depth > 0) {
             throw 'Missing ")"';
         }
 
-        return node;
+        return null;
     };
 
     var parse = function (input) {
-        return parseRecursive(input, 0, { index: 0 })[0];
+        return parseRecursive(input, 0, { index: 0 }).head;
     };
 
     var identifierPattern = /[^0-9,#();"'`|[\]{}][^,#();"'`|[\]{}]*/i;
     var parseIdentifier = function (text) {
-        return (!Array.isArray(text) && identifierPattern.test(text)) ? text : null;
+        return (!isPair(text) && identifierPattern.test(text)) ? text : null;
     };
 
     var defaultEnvironment = {
@@ -189,18 +207,13 @@
 
         // Lists
         cons: function (a, b) { return { head: a, tail: b }; },
-        // TODO: Lists should all be linked lists (some are currently arrays...)
-        car: function (pair) { return Array.isArray(pair) ? pair[0] : pair.head; },
-        cdr: function (pair) { return Array.isArray(pair) ? pair.slice(1) : pair.tail; },
+        car: function (pair) { return pair.head; },
+        cdr: function (pair) { return pair.tail; },
         nil: null,
-        'null?': function (x) { return Array.isArray(x) ? (x.length === 0) : (x === null); },
-        'pair?': function (x) { return Array.isArray(x) ? true : (x.head !== undefined); },
+        'null?': function (x) { return x === null; },
+        'pair?': function (x) { return isPair(x); },
         list: function () {
-            var list = defaultEnvironment.nil;
-            for (var i = arguments.length -1; i >= 0; i--) {
-                list = defaultEnvironment.cons(arguments[i], list);
-            }
-            return list;
+            return createList.call(null, arguments);
         },
         // Note: Continued below
 
@@ -266,17 +279,19 @@
     };
 
     specialForms.define = function (environments, nameExpression, valueExpression) {
-        if (Array.isArray(nameExpression)) {
+        if (isList(nameExpression)) {
             // Function: (define (name arg1 arg2 ...) exp1 exp2 ...)
             // Translate to: (define name (lambda (arg1 arg2 ...) exp1 exp2 ...))
+            // TODO: Again, more graceful
+            nameExpression = listToArray(nameExpression);
             if (nameExpression.length < 1) {
                 throw 'define: No identifier supplied'
             }
 
-            return specialForms.define(environments, nameExpression[0], [
+            return specialForms.define(environments, nameExpression[0], createList.call([
                 'lambda',
                 nameExpression.slice(1)
-            ].concat(Array.prototype.slice.call(arguments, 2)));
+            ].concat(Array.prototype.slice.call(arguments, 2))));
         } else {
             // Variable: name
             var identifier = parseIdentifier(nameExpression);
@@ -382,8 +397,10 @@
 
     var evaluateInternal = function (environments, expression) {
         var result;
-        if (Array.isArray(expression)) {
+        if (isList(expression)) {
             // Combination
+            // TODO: Something more graceful than this...
+            expression = listToArray(expression);
             var operator = expression[0];
 
             var specialForm;
@@ -495,4 +512,21 @@
 
     // Exports
     exports.Interpreter = Interpreter;
+
+    // TODO: Remove
+    exports.tokenize = tokenize;
+    exports.parse = parse;
 })(typeof (exports) === 'undefined' ? (JSLisp = {}) : exports);
+
+// TODO: Remove
+var input = '(define (square x) (* x x))';
+var tokenized, parsed, evaluated, formatted;
+var interpreter = new exports.Interpreter();
+console.log(tokenized = exports.tokenize(input));
+console.log(parsed = exports.parse(tokenized));
+console.log(interpreter.format(parsed));
+console.log(evaluated = interpreter.evaluate(input));
+if (evaluated !== undefined) {
+    console.log(formatted = interpreter.format(evaluated));
+}
+
