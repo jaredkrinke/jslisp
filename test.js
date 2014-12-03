@@ -182,6 +182,18 @@ test('2.1.3', [
     ['(car (cdr z))', 3],
 ]);
 
+test('2.1.3', [
+    // TODO: Need a better way to reason over lists
+    ['(cons 1 (cons 2 (cons 3 (cons 4 nil))))', { head: 1, tail: { head: 2, tail: { head: 3, tail: { head: 4, tail: null}}}}],
+    ['(list 1 2 3 4)', { head: 1, tail: { head: 2, tail: { head: 3, tail: { head: 4, tail: null}}}}],
+    ['(define one-through-four (list 1 2 3 4))'],
+    ['one-through-four', { head: 1, tail: { head: 2, tail: { head: 3, tail: { head: 4, tail: null}}}}],
+    ['(car one-through-four)', 1],
+    ['(cdr one-through-four)', { head: 2, tail: { head: 3, tail: { head: 4, tail: null}}}],
+    ['(car (cdr one-through-four))', 2],
+    ['(cons 5 one-through-four)', { head: 5, tail: { head: 1, tail: { head: 2, tail: { head: 3, tail: { head: 4, tail: null}}}}}],
+]);
+
 //test('', [
 //    ['', ],
 //]);
