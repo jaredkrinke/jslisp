@@ -117,6 +117,7 @@
         return o === null || isPair(o);
     };
 
+    // TODO: Remove eventually
     var listToArray = function (list) {
         var array = [];
         for (; list !== null; list = list.tail) {
@@ -156,7 +157,7 @@
     };
 
     var parse = function (input) {
-        return parseRecursive(input, 0, { index: 0 }).head;
+        return parseRecursive(input, 0, { index: 0 });
     };
 
     var identifierPattern = /[^0-9,#();"'`|[\]{}][^,#();"'`|[\]{}]*/i;
@@ -264,11 +265,11 @@
         for (var i = 0, count = formalParameters.length; i < count; i++) {
             var identifier = parseIdentifier(formalParameters[i]);
             if (!identifier) {
-                throw 'define: Invalid identifier: ' + formalParameters[i];
+                throw 'Invalid identifier: ' + formalParameters[i];
             }
         
             if (identifier in identifierSet) {
-                throw 'define: Duplicate formal parameter: ' + identifier;
+                throw 'Duplicate formal parameter: ' + identifier;
             }
         
             identifiers[i] = identifier;
@@ -278,12 +279,12 @@
         return createFunction(environments, identifiers, Array.prototype.slice.call(arguments, 2));
     };
 
-    specialForms.define = function (environments, nameExpression, valueExpression) {
-        if (isList(nameExpression)) {
+    specialForms.define = function (environments, list) {
+        if (isList(list.head)) {
             // Function: (define (name arg1 arg2 ...) exp1 exp2 ...)
             // Translate to: (define name (lambda (arg1 arg2 ...) exp1 exp2 ...))
             // TODO: Again, more graceful
-            nameExpression = listToArray(nameExpression);
+            nameExpression = listToArray(list.head);
             if (nameExpression.length < 1) {
                 throw 'define: No identifier supplied'
             }
@@ -294,12 +295,12 @@
             ].concat(Array.prototype.slice.call(arguments, 2))));
         } else {
             // Variable: name
-            var identifier = parseIdentifier(nameExpression);
+            var identifier = parseIdentifier(list.head);
             if (!identifier) {
-                throw 'define: Invalid identifier: ' + nameExpression;
+                throw 'define: Invalid identifier: ' + list.head;
             }
 
-            environments[0][identifier] = evaluateInternal(environments, valueExpression);
+            environments[0][identifier] = evaluateInternal(environments, list.tail);
         }
     };
 
@@ -395,75 +396,80 @@
         return o.formalParameters && o.body;
     }
 
-    var evaluateInternal = function (environments, expression) {
+    var evaluateInternal = function (environments, list) {
         var result;
-        if (isList(expression)) {
-            // Combination
-            // TODO: Something more graceful than this...
-            expression = listToArray(expression);
-            var operator = expression[0];
-
-            var specialForm;
-            if (!Array.isArray(operator) && (specialForm = specialForms[operator])) {
-                // Special form
-                return specialForm.apply(null, [environments].concat(expression.slice(1)));
-            } else {
-                if (expression.length < 1) {
+        if (expression === null) {
+            return null;
+        } else {
+            var expression = list.head;
+            if (isList(expression)) {
+                // Combination
+                var operator = expression.head;
+                if (!operator) {
                     throw 'Invalid combination: ()';
                 }
 
-                var f = evaluateInternal(environments, expression[0]);
-
-                // Evaluate subexpressions
-                var operands = [];
-                for (var i = 1, count = expression.length; i < count; i++) {
-                    operands[i - 1] = evaluateInternal(environments, expression[i]);
-                }
-
-                if (typeof (f) === 'function') {
-                    // Built-in function
-                    result = f.apply(null, operands);
-                } else if (isFunctionValue(f)) {
-                    // Custom function
-                    var formalParameters = f.formalParameters;
-                    var localEnvironment = {};
-                    for (var i = 0, count = formalParameters.length; i < count; i++) {
-                        localEnvironment[formalParameters[i]] = operands[i];
-                    }
-
-                    // Evaluate each expression in the local environment and return the last value
-                    // TODO: Tail recursion?
-                    var localEnvironments = [localEnvironment].concat(f.closingEnvironments);
-                    var body = f.body;
-                    for (var i = 0, count = body.length; i < count; i++) {
-                        result = evaluateInternal(localEnvironments, body[i]);
-                    }
+                var specialForm;
+                if (!isList(operator) && (specialForm = specialForms[operator])) {
+                    // Special form
+                    return specialForm(environments, expression.tail);
                 } else {
-                    throw 'Non-function used as an operator: ' + f;
-                }
-            }
-        } else {
-            // Literal
-            var result = parseFloat(expression);
-            if (isNaN(result)) {
-                if (typeof(expression) === 'string' && expression.length >= 1 && expression[0] === '"') {
-                    result = expression.slice(1, expression.length - 1);
-                } else {
-                    result = lookup(environments, expression);
+                    var f = evaluateInternal(environments, operator);
 
-                    if (result === undefined) {
-                        throw 'No variable named: ' + expression;
+                    // Evaluate subexpressions
+                    var operands = evaluateInternal(environments, expression.tail);
+
+                    if (typeof (f) === 'function') {
+                        // Built-in function
+                        result = f.apply(null, listToArray(operands));
+                    } else if (isFunctionValue(f)) {
+                        // Custom function
+                        var formalParameters = f.formalParameters;
+                        var localEnvironment = {};
+                        for (var i = 0, count = formalParameters.length, operand = operands; i < count && operand; i++, operand = operand.tail) {
+                            localEnvironment[formalParameters[i]] = operand.head;
+                        }
+
+                        // Evaluate each expression in the local environment and return the last value
+                        // TODO: Tail recursion?
+                        var localEnvironments = [localEnvironment].concat(f.closingEnvironments);
+                        for (var bodyExpression = f.body; bodyExpression; bodyExpression = bodyExpression.tail) {
+                            result = evaluateInternal(localEnvironments, bodyExpression.head);
+                        }
+                    } else {
+                        throw 'Non-function used as an operator: ' + f;
+                    }
+                }
+            } else {
+                // Literal
+                var result = parseFloat(expression);
+                if (isNaN(result)) {
+                    if (typeof (expression) === 'string' && expression.length >= 1 && expression[0] === '"') {
+                        result = expression.slice(1, expression.length - 1);
+                    } else {
+                        result = lookup(environments, expression);
+
+                        if (result === undefined) {
+                            throw 'No variable named: ' + expression;
+                        }
                     }
                 }
             }
         }
+
         return result;
     };
 
     var evaluate = function (environment, input) {
         var tree = parse(tokenize(input));
         var localEnvironment = environment || {};
+        var result;
         return evaluateInternal([localEnvironment, defaultEnvironment], tree);
+        //var environments = [localEnvironment, defaultEnvironment];
+        //for (; tree !== null; tree = tree.tail) {
+        //    result = evaluateInternal(environments, tree.head);
+        //}
+        //return result;
     };
 
     var format = function (value) {
@@ -499,11 +505,11 @@
 
     Interpreter.prototype.evaluate = function (input) {
         var output;
-        try {
+        //try {
             output = evaluate(this.localEnvironment, input);
-        } catch (error) {
-            return error;
-        }
+        //} catch (error) {
+        //    return error;
+        //}
 
         return output;
     };
@@ -519,7 +525,7 @@
 })(typeof (exports) === 'undefined' ? (JSLisp = {}) : exports);
 
 // TODO: Remove
-var input = '(define (square x) (* x x))';
+var input = '(+ 1 1)';
 var tokenized, parsed, evaluated, formatted;
 var interpreter = new exports.Interpreter();
 console.log(tokenized = exports.tokenize(input));
