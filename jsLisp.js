@@ -112,6 +112,21 @@
         return list;
     };
 
+    var appendList = function (a, b) {
+        if (a === null) {
+            return b;
+        }
+
+        var node = a;
+        while (node.tail) {
+            node = node.tail;
+        }
+
+        node.tail = b;
+
+        return a;
+    };
+
     // TODO: Better term since improper lists count?
     var isList = function (o) {
         return o === null || isPair(o);
@@ -288,7 +303,7 @@
                 throw 'define: No identifier supplied'
             }
 
-            return specialForms.define(environments, createList(car(first), createList('lambda', cdr(first), car(cdr(list)))));
+            return specialForms.define(environments, createList(car(first), appendList(createList('lambda', cdr(first)), cdr(list))));
         } else {
             // Variable: name
             var identifier = parseIdentifier(list.head);
@@ -526,13 +541,34 @@
 })(typeof (exports) === 'undefined' ? (JSLisp = {}) : exports);
 
 // TODO: Remove
-//var input = '(define (square x) (* x x)) (square 3)';
-//var input = '((define square (lambda (x) (* x x))) (square 3))';
-//var input = '(define square (lambda (x) (* x x))) (square 3)';
-//var input = '(define (square x) (* x x)) square';
-//var input = '(define (square x) (* x x)) (square 3)';
+var interpreter = new exports.Interpreter();
+
+//var input = '(define (square x) (* x x)) (square 3)'
+//var input = '(define square (lambda (x) (* x x))) (square 3)'
+//var input = '(define square 3) square'
+//    + '(define (abs x) (if (< x 0) (- x) x))'
+//    + '(define (square x) (* x x))'
+//    + '(define (sqrt-iter guess x) (if (good-enough? guess x) guess (sqrt-iter (improve guess x) x)))'
+//    + '(define (improve guess x) (average guess (/ x guess)))'
+//    + '(define (average x y) (/ (+ x y) 2))'
+//    + '(define (good-enough? guess x) (< (abs (- (square guess) x)) 0.001))'
+//    + '(define (sqrt x) (sqrt-iter 1.0 x))'
+//    + '(sqrt 9)';
+
+//var inputs = ['(define (abs x) (if (< x 0) (- x) x))',
+//    '(define (square x) (* x x))',
+//    '(define (average x y) (/ (+ x y) 2))',
+//    '(define (sqrt x) (define (good-enough? guess x) (< (abs (- (square guess) x)) 0.001)) (define (improve guess x) (average guess (/ x guess))) (define (sqrt-iter guess x) (if (good-enough? guess x) guess (sqrt-iter (improve guess x) x))) (sqrt-iter 1.0 x))',
+//    '(sqrt 9)',
+//    '(define (sqrt x) (define (good-enough? guess) (< (abs (- (square guess) x)) 0.001)) (define (improve guess) (average guess (/ x guess))) (define (sqrt-iter guess) (if (good-enough? guess) guess (sqrt-iter (improve guess)))) (sqrt-iter 1.0))',
+//    '(sqrt 9)'];
+//
+//
+//for (var i = 0, count = inputs.length; i < count; i++) {
+//    console.log(interpreter.evaluate(inputs[i]));
+//}
+
 //var tokenized, parsed, evaluated, formatted;
-//var interpreter = new exports.Interpreter();
 //console.log(tokenized = exports.tokenize(input));
 //console.log(parsed = exports.parse(tokenized));
 //console.log(interpreter.format(parsed));
