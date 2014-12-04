@@ -132,14 +132,6 @@
         return o === null || isPair(o);
     };
 
-    var car = function (pair) {
-        return pair.head;
-    };
-
-    var cdr =  function (pair) {
-        return pair.tail;
-    };
-
     var parseRecursive = function (input, depth, state) {
         if (state.index < input.length) {
             var token = input[state.index++];
@@ -221,7 +213,7 @@
         'false': false,
 
         // Lists
-        cons: function (a, b) { return { head: a, tail: b }; },
+        cons: function (a, b) { return createPair(a, b); },
         car: function (pair) { return pair.head; },
         cdr: function (pair) { return pair.tail; },
         nil: null,
@@ -274,13 +266,13 @@
     };
 
     specialForms.lambda = function (environments, list) {
-        var parameters = car(list);
+        var parameters = list.head;
         var identifierSet = {};
         var identifiers = [];
         for (var i = 0, parameter = parameters; parameter; parameter = parameter.tail) {
-            var identifier = parseIdentifier(car(parameter));
+            var identifier = parseIdentifier(parameter.head);
             if (!identifier) {
-                throw 'Invalid identifier: ' + car(parameter);
+                throw 'Invalid identifier: ' + parameter.head;
             }
         
             if (identifier in identifierSet) {
@@ -291,11 +283,11 @@
             identifierSet[identifier] = true;
         }
 
-        return createFunction(environments, identifiers, cdr(list));
+        return createFunction(environments, identifiers, list.tail);
     };
 
     specialForms.define = function (environments, list) {
-        var first = car(list);
+        var first = list.head;
         if (isList(first)) {
             // Function: (define (name arg1 arg2 ...) exp1 exp2 ...)
             // Translate to: (define name (lambda (arg1 arg2 ...) exp1 exp2 ...))
@@ -303,7 +295,7 @@
                 throw 'define: No identifier supplied'
             }
 
-            return specialForms.define(environments, createList(car(first), appendList(createList('lambda', cdr(first)), cdr(list))));
+            return specialForms.define(environments, createList(first.head, appendList(createList('lambda', first.tail), list.tail)));
         } else {
             // Variable: name
             var identifier = parseIdentifier(list.head);
@@ -316,14 +308,18 @@
     };
 
     var createLet = function (sequential) {
-        return function (environments, bindings) {
+        return function (environments, list) {
             // Evaluate all the expressions and bind the values
             var localEnvironment = {};
             var localEnvironments = [localEnvironment].concat(environments);
-            for (var i = 0, count = bindings.length; i < count; i++) {
-                var binding = bindings[i];
-                var identifier = parseIdentifier(binding[0]);
-                var initializeExpression = binding[1];
+            for (var bindings = list.head; bindings; bindings = bindings.tail) {
+                var binding = bindings.head;
+                var identifier = parseIdentifier(binding.head);
+                if (identifier === null) {
+                    throw 'Invalid identifier in let: ' + binding.head;
+                }
+
+                var initializeExpression = binding.tail.head;
                 if (initializeExpression) {
                     localEnvironment[identifier] = evaluateInternal(sequential ? localEnvironments : environments, initializeExpression);
                 } else {
@@ -333,8 +329,8 @@
     
             // Execute the body
             var result;
-            for (var i = 2, count = arguments.length; i < count; i++) {
-                result = evaluateInternal(localEnvironments, arguments[i]);
+            for (list = list.tail; list; list = list.tail) {
+                result = evaluateInternal(localEnvironments, list.head);
             }
     
             return result;
@@ -521,11 +517,7 @@
 
     Interpreter.prototype.evaluate = function (input) {
         var output;
-        //try {
-            output = evaluate(this.localEnvironment, input);
-        //} catch (error) {
-        //    return error;
-        //}
+        output = evaluate(this.localEnvironment, input);
 
         return output;
     };
@@ -534,47 +526,5 @@
 
     // Exports
     exports.Interpreter = Interpreter;
-
-    // TODO: Remove
-    exports.tokenize = tokenize;
-    exports.parse = parse;
 })(typeof (exports) === 'undefined' ? (JSLisp = {}) : exports);
-
-// TODO: Remove
-var interpreter = new exports.Interpreter();
-
-//var input = '(define (square x) (* x x)) (square 3)'
-//var input = '(define square (lambda (x) (* x x))) (square 3)'
-//var input = '(define square 3) square'
-//    + '(define (abs x) (if (< x 0) (- x) x))'
-//    + '(define (square x) (* x x))'
-//    + '(define (sqrt-iter guess x) (if (good-enough? guess x) guess (sqrt-iter (improve guess x) x)))'
-//    + '(define (improve guess x) (average guess (/ x guess)))'
-//    + '(define (average x y) (/ (+ x y) 2))'
-//    + '(define (good-enough? guess x) (< (abs (- (square guess) x)) 0.001))'
-//    + '(define (sqrt x) (sqrt-iter 1.0 x))'
-//    + '(sqrt 9)';
-
-//var inputs = ['(define (abs x) (if (< x 0) (- x) x))',
-//    '(define (square x) (* x x))',
-//    '(define (average x y) (/ (+ x y) 2))',
-//    '(define (sqrt x) (define (good-enough? guess x) (< (abs (- (square guess) x)) 0.001)) (define (improve guess x) (average guess (/ x guess))) (define (sqrt-iter guess x) (if (good-enough? guess x) guess (sqrt-iter (improve guess x) x))) (sqrt-iter 1.0 x))',
-//    '(sqrt 9)',
-//    '(define (sqrt x) (define (good-enough? guess) (< (abs (- (square guess) x)) 0.001)) (define (improve guess) (average guess (/ x guess))) (define (sqrt-iter guess) (if (good-enough? guess) guess (sqrt-iter (improve guess)))) (sqrt-iter 1.0))',
-//    '(sqrt 9)'];
-//
-//
-//for (var i = 0, count = inputs.length; i < count; i++) {
-//    console.log(interpreter.evaluate(inputs[i]));
-//}
-
-//var tokenized, parsed, evaluated, formatted;
-//console.log(tokenized = exports.tokenize(input));
-//console.log(parsed = exports.parse(tokenized));
-//console.log(interpreter.format(parsed));
-//console.log(evaluated = interpreter.evaluate(input));
-//if (evaluated !== undefined) {
-//    console.log(formatted = interpreter.format(evaluated));
-//    //console.log(interpreter.format(evaluated.body));
-//}
 
