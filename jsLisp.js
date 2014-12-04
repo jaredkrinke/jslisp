@@ -228,7 +228,7 @@
         'null?': function (x) { return x === null; },
         'pair?': function (x) { return isPair(x); },
         list: function () {
-            return createList.call(null, arguments);
+            return createList.apply(null, arguments);
         },
         // Note: Continued below
 
