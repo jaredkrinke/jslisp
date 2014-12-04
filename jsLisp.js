@@ -265,6 +265,10 @@
         };
     };
 
+    var isFunction = function (o) {
+        return o.formalParameters && o.body;
+    }
+
     specialForms.lambda = function (environments, list) {
         var parameters = list.head;
         var identifierSet = {};
@@ -354,7 +358,7 @@
         return result;
     };
 
-    specialForms.if = function (environments, list) {
+    specialForms['if'] = function (environments, list) {
         var predicate = list.head;
         var consequent = list.tail.head;
         if (evaluateInternal(environments, predicate) === true) {
@@ -403,10 +407,6 @@
         return result;
     };
 
-    var isFunctionValue = function (o) {
-        return o.formalParameters && o.body;
-    }
-
     var evaluateInternal = function (environments, expression) {
         var result;
         if (expression === null) {
@@ -435,7 +435,7 @@
                     if (typeof(f) === 'function') {
                         // Built-in function
                         result = f.apply(null, operands);
-                    } else if (isFunctionValue(f)) {
+                    } else if (isFunction(f)) {
                         // Custom function
                         var formalParameters = f.formalParameters;
                         var localEnvironment = {};
