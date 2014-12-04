@@ -483,22 +483,15 @@
         if (value === null) {
             output = '()';
         } else if (value.head) {
-            var first = true;
             output = '(';
             for (; value !== null; value = value.tail) {
-                if (first) {
-                    first = false;
-                } else {
-                    output += ' ';
-                }
-
                 if (value.head === undefined) {
                     return 'Improper list';
                 }
                 
                 output += format(value.head);
+                output += value.tail ? ' ' : ')';
             }
-            output += ')';
         } else {
             output = value.toString();
         }
@@ -510,10 +503,7 @@
     }
 
     Interpreter.prototype.evaluate = function (input) {
-        var output;
-        output = evaluate(this.localEnvironment, input);
-
-        return output;
+        return evaluate(this.localEnvironment, input);
     };
 
     Interpreter.prototype.format = format;
