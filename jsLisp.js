@@ -117,13 +117,12 @@
         return o === null || isPair(o);
     };
 
-    // TODO: Remove eventually
-    var listToArray = function (list) {
-        var array = [];
-        for (; list !== null; list = list.tail) {
-            array.push(list.head);
-        }
-        return array;
+    var car = function (pair) {
+        return pair.head;
+    };
+
+    var cdr =  function (pair) {
+        return pair.tail;
     };
 
     var parseRecursive = function (input, depth, state) {
@@ -247,8 +246,8 @@
     // TODO: Do special forms really need a separate lookup table?
     specialForms = {};
 
-    specialForms.quote = function (environments, datum) {
-        return datum;
+    specialForms.quote = function (environments, list) {
+        return list.head;
     };
 
     var createFunction = function (closingEnvironments, formalParameters, body) {
@@ -259,40 +258,37 @@
         };
     };
 
-    specialForms.lambda = function (environments, formalParameters) {
+    specialForms.lambda = function (environments, list) {
+        var parameters = car(list);
         var identifierSet = {};
         var identifiers = [];
-        for (var i = 0, count = formalParameters.length; i < count; i++) {
-            var identifier = parseIdentifier(formalParameters[i]);
+        for (var i = 0, parameter = parameters; parameter; parameter = parameter.tail) {
+            var identifier = parseIdentifier(car(parameter));
             if (!identifier) {
-                throw 'Invalid identifier: ' + formalParameters[i];
+                throw 'Invalid identifier: ' + car(parameter);
             }
         
             if (identifier in identifierSet) {
                 throw 'Duplicate formal parameter: ' + identifier;
             }
         
-            identifiers[i] = identifier;
+            identifiers[i++] = identifier;
             identifierSet[identifier] = true;
         }
 
-        return createFunction(environments, identifiers, Array.prototype.slice.call(arguments, 2));
+        return createFunction(environments, identifiers, cdr(list));
     };
 
     specialForms.define = function (environments, list) {
-        if (isList(list.head)) {
+        var first = car(list);
+        if (isList(first)) {
             // Function: (define (name arg1 arg2 ...) exp1 exp2 ...)
             // Translate to: (define name (lambda (arg1 arg2 ...) exp1 exp2 ...))
-            // TODO: Again, more graceful
-            nameExpression = listToArray(list.head);
-            if (nameExpression.length < 1) {
+            if (first.tail === null) {
                 throw 'define: No identifier supplied'
             }
 
-            return specialForms.define(environments, nameExpression[0], createList.call([
-                'lambda',
-                nameExpression.slice(1)
-            ].concat(Array.prototype.slice.call(arguments, 2))));
+            return specialForms.define(environments, createList(car(first), createList('lambda', cdr(first), car(cdr(list)))));
         } else {
             // Variable: name
             var identifier = parseIdentifier(list.head);
@@ -300,7 +296,7 @@
                 throw 'define: Invalid identifier: ' + list.head;
             }
 
-            environments[0][identifier] = evaluateInternal(environments, list.tail);
+            environments[0][identifier] = evaluateInternal(environments, list.tail.head);
         }
     };
 
@@ -334,22 +330,26 @@
     specialForms['let*'] = createLet(true);
     // TODO: letrec?
 
-    specialForms.cond = function (environments) {
-        for (var i = 1, count = arguments.length; i < count; i++) {
-            var clause = arguments[i];
-            var predicate = clause[0];
-            var consequentExpression = clause[1];
-
+    specialForms.cond = function (environments, list) {
+        var result;
+        for (; list; list = list.tail) {
+            var clause = list.head;
+            var predicate = clause.head;
+            var consequent = clause.tail.head;
             if (predicate === 'else' || evaluateInternal(environments, predicate) === true) {
-                return evaluateInternal(environments, consequentExpression);
+                return evaluateInternal(environments, consequent);
             }
         }
+        return result;
     };
 
-    specialForms.if = function (environments, predicate, consequent, alternative) {
+    specialForms.if = function (environments, list) {
+        var predicate = list.head;
+        var consequent = list.tail.head;
         if (evaluateInternal(environments, predicate) === true) {
             return evaluateInternal(environments, consequent);
         } else {
+            var alternative = list.tail.tail.head;
             return evaluateInternal(environments, alternative);
         }
     };
@@ -396,12 +396,11 @@
         return o.formalParameters && o.body;
     }
 
-    var evaluateInternal = function (environments, list) {
+    var evaluateInternal = function (environments, expression) {
         var result;
         if (expression === null) {
             return null;
         } else {
-            var expression = list.head;
             if (isList(expression)) {
                 // Combination
                 var operator = expression.head;
@@ -417,17 +416,20 @@
                     var f = evaluateInternal(environments, operator);
 
                     // Evaluate subexpressions
-                    var operands = evaluateInternal(environments, expression.tail);
+                    var operands = [];
+                    for (var operand = expression.tail; operand; operand = operand.tail) {
+                        operands.push(evaluateInternal(environments, operand.head));
+                    }
 
-                    if (typeof (f) === 'function') {
+                    if (typeof(f) === 'function') {
                         // Built-in function
-                        result = f.apply(null, listToArray(operands));
+                        result = f.apply(null, operands);
                     } else if (isFunctionValue(f)) {
                         // Custom function
                         var formalParameters = f.formalParameters;
                         var localEnvironment = {};
-                        for (var i = 0, count = formalParameters.length, operand = operands; i < count && operand; i++, operand = operand.tail) {
-                            localEnvironment[formalParameters[i]] = operand.head;
+                        for (var i = 0, count1 = formalParameters.length, count2 = operands.length; i < count1 && i < count2; i++) {
+                            localEnvironment[formalParameters[i]] = operands[i];
                         }
 
                         // Evaluate each expression in the local environment and return the last value
@@ -464,12 +466,11 @@
         var tree = parse(tokenize(input));
         var localEnvironment = environment || {};
         var result;
-        return evaluateInternal([localEnvironment, defaultEnvironment], tree);
-        //var environments = [localEnvironment, defaultEnvironment];
-        //for (; tree !== null; tree = tree.tail) {
-        //    result = evaluateInternal(environments, tree.head);
-        //}
-        //return result;
+        var environments = [localEnvironment, defaultEnvironment];
+        for (; tree !== null; tree = tree.tail) {
+            result = evaluateInternal(environments, tree.head);
+        }
+        return result;
     };
 
     var format = function (value) {
@@ -525,14 +526,19 @@
 })(typeof (exports) === 'undefined' ? (JSLisp = {}) : exports);
 
 // TODO: Remove
-var input = '(+ 1 1)';
-var tokenized, parsed, evaluated, formatted;
-var interpreter = new exports.Interpreter();
-console.log(tokenized = exports.tokenize(input));
-console.log(parsed = exports.parse(tokenized));
-console.log(interpreter.format(parsed));
-console.log(evaluated = interpreter.evaluate(input));
-if (evaluated !== undefined) {
-    console.log(formatted = interpreter.format(evaluated));
-}
+//var input = '(define (square x) (* x x)) (square 3)';
+//var input = '((define square (lambda (x) (* x x))) (square 3))';
+//var input = '(define square (lambda (x) (* x x))) (square 3)';
+//var input = '(define (square x) (* x x)) square';
+//var input = '(define (square x) (* x x)) (square 3)';
+//var tokenized, parsed, evaluated, formatted;
+//var interpreter = new exports.Interpreter();
+//console.log(tokenized = exports.tokenize(input));
+//console.log(parsed = exports.parse(tokenized));
+//console.log(interpreter.format(parsed));
+//console.log(evaluated = interpreter.evaluate(input));
+//if (evaluated !== undefined) {
+//    console.log(formatted = interpreter.format(evaluated));
+//    //console.log(interpreter.format(evaluated.body));
+//}
 
