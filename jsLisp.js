@@ -332,12 +332,7 @@
             }
     
             // Execute the body
-            var result;
-            for (list = list.tail; list; list = list.tail) {
-                result = evaluateInternal(localEnvironments, list.head);
-            }
-    
-            return result;
+            return evaluateSequence(localEnvironments, list.tail);
         };
     };
 
@@ -446,9 +441,7 @@
                         // Evaluate each expression in the local environment and return the last value
                         // TODO: Tail recursion?
                         var localEnvironments = [localEnvironment].concat(f.closingEnvironments);
-                        for (var bodyExpression = f.body; bodyExpression; bodyExpression = bodyExpression.tail) {
-                            result = evaluateInternal(localEnvironments, bodyExpression.head);
-                        }
+                        result = evaluateSequence(localEnvironments, f.body);
                     } else {
                         throw 'Non-function used as an operator: ' + f;
                     }
@@ -473,15 +466,16 @@
         return result;
     };
 
-    var evaluate = function (environment, input) {
-        var tree = parse(tokenize(input));
-        var localEnvironment = environment || {};
+    var evaluateSequence = function (environments, list) {
         var result;
-        var environments = [localEnvironment, defaultEnvironment];
-        for (; tree !== null; tree = tree.tail) {
-            result = evaluateInternal(environments, tree.head);
+        for (; list; list = list.tail) {
+            result = evaluateInternal(environments, list.head);
         }
         return result;
+    };
+
+    var evaluate = function (environment, input) {
+        return evaluateSequence([environment || {}, defaultEnvironment], parse(tokenize(input)));
     };
 
     var format = function (value) {
