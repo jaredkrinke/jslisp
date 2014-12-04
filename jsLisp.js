@@ -149,7 +149,7 @@
                         return null;
 
                     case '\'':
-                        node = appendList(createList('quote'), parseRecursive(input, depth, state));
+                        node = createPair('quote', parseRecursive(input, depth, state));
                         break;
                 }
             }
