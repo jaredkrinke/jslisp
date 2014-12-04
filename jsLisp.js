@@ -369,10 +369,10 @@
         }
     };
 
-    specialForms.and = function (environments) {
+    specialForms.and = function (environments, list) {
         var result;
-        for (var i = 1, count = arguments.length; i < count; i++) {
-            result = evaluateInternal(environments, arguments[i]);
+        for (; list; list = list.tail) {
+            result = evaluateInternal(environments, list.head);
             if (result !== true) {
                 return false;
             }
@@ -381,9 +381,9 @@
         return result;
     };
 
-    specialForms.or = function (environments) {
-        for (var i = 1, count = arguments.length; i < count; i++) {
-            var result = evaluateInternal(environments, arguments[i]);
+    specialForms.or = function (environments, list) {
+        for (; list; list = list.tail) {
+            var result = evaluateInternal(environments, list.head);
             if (result !== false) {
                 return result;
             }
@@ -392,8 +392,8 @@
         return false;
     };
 
-    specialForms.not = function (environments, expression) {
-        if (evaluateInternal(environments, expression) === false) {
+    specialForms.not = function (environments, list) {
+        if (evaluateInternal(environments, list.head) === false) {
             return true;
         }
         return false;
