@@ -171,66 +171,80 @@
         return (!isPair(text) && identifierPattern.test(text)) ? text : null;
     };
 
-    var defaultEnvironment = {
-        // Arithmetic
-        '+': function () {
-            var result = 0;
-            for (var i = 0, count = arguments.length; i < count; i++) {
-                result += parseFloat(arguments[i]);
-            }
-            return result;
-        },
-
-        '-': function (a, b) {
-            if (b !== undefined) {
-                return parseFloat(a) - parseFloat(b);
-            }
-
-            return -parseFloat(a);
-        },
-
-        '*': function () {
-            var result = 1;
-            for (var i = 0, count = arguments.length; i < count; i++) {
-                result *= parseFloat(arguments[i]);
-            }
-            return result;
-        },
-
-        '/': function (a, b) { return parseFloat(a) / parseFloat(b); },
-        remainder: function (a, b) { return parseFloat(a) % parseFloat(b); },
-        random: function (n) { return Math.floor(Math.random() * n); },
-
-        '>': function (a, b) { return parseFloat(a) > parseFloat(b); },
-        '>=': function (a, b) { return parseFloat(a) >= parseFloat(b); },
-        '=': function (a, b) { return parseFloat(a) === parseFloat(b); },
-        '<=': function (a, b) { return parseFloat(a) <= parseFloat(b); },
-        '<': function (a, b) { return parseFloat(a) < parseFloat(b); },
-
-        // Symbols
-        'eq?': function (a, b) { return a === b; },
-        'true': true,
-        'false': false,
-
-        // Lists
-        cons: function (a, b) { return createPair(a, b); },
-        car: function (pair) { return pair.head; },
-        cdr: function (pair) { return pair.tail; },
-        nil: null,
-        'null?': function (x) { return x === null; },
-        'pair?': function (x) { return isPair(x); },
-        list: function () {
-            return createList.apply(null, arguments);
-        },
-        // Note: Continued below
-
-        // Output
-        display: function (x) { process.stdout.write(x.toString()); },
-        newline: function (x) { process.stdout.write('\n'); },
-
-        // Error handling
-        error: function (x) { throw x; },
+    var set = function (environment, key, value) {
+        environment.head[key] = value;
     };
+
+    var lookup = function (environment, identifier) {
+        var result;
+        for (; result === undefined && environment; environment = environment.tail) {
+            result = environment.head[identifier];
+        }
+        return result;
+    };
+
+    var defaultEnvironment = createPair(
+        {
+            // Arithmetic
+            '+': function () {
+                var result = 0;
+                for (var i = 0, count = arguments.length; i < count; i++) {
+                    result += parseFloat(arguments[i]);
+                }
+                return result;
+            },
+
+            '-': function (a, b) {
+                if (b !== undefined) {
+                    return parseFloat(a) - parseFloat(b);
+                }
+
+                return -parseFloat(a);
+            },
+
+            '*': function () {
+                var result = 1;
+                for (var i = 0, count = arguments.length; i < count; i++) {
+                    result *= parseFloat(arguments[i]);
+                }
+                return result;
+            },
+
+            '/': function (a, b) { return parseFloat(a) / parseFloat(b); },
+            remainder: function (a, b) { return parseFloat(a) % parseFloat(b); },
+            random: function (n) { return Math.floor(Math.random() * n); },
+
+            '>': function (a, b) { return parseFloat(a) > parseFloat(b); },
+            '>=': function (a, b) { return parseFloat(a) >= parseFloat(b); },
+            '=': function (a, b) { return parseFloat(a) === parseFloat(b); },
+            '<=': function (a, b) { return parseFloat(a) <= parseFloat(b); },
+            '<': function (a, b) { return parseFloat(a) < parseFloat(b); },
+
+            // Symbols
+            'eq?': function (a, b) { return a === b; },
+            'true': true,
+            'false': false,
+
+            // Lists
+            cons: function (a, b) { return createPair(a, b); },
+            car: function (pair) { return pair.head; },
+            cdr: function (pair) { return pair.tail; },
+            nil: null,
+            'null?': function (x) { return x === null; },
+            'pair?': function (x) { return isPair(x); },
+            list: function () {
+                return createList.apply(null, arguments);
+            },
+            // Note: Continued below
+
+            // Output
+            display: function (x) { process.stdout.write(x.toString()); },
+            newline: function (x) { process.stdout.write('\n'); },
+
+            // Error handling
+            error: function (x) { throw x; },
+        }, null
+    );
 
     // cadr, caddr, etc. (up to a depth of 4)
     for (var depth = 2; depth <= 4; depth++) {
@@ -243,9 +257,11 @@
             }
 
             // E.g. caddr is implemented as car(cddr(...))
-            defaultEnvironment['c' + label + 'r'] = (function (firstOperation, secondOperation) {
-                return function (pair) { return firstOperation(secondOperation(pair)); };
-            })(defaultEnvironment['c' + label.slice(0, 1) + 'r'], defaultEnvironment['c' + label.slice(1) + 'r']);
+            var firstOperation = lookup(defaultEnvironment, 'c' + label.slice(0, 1) + 'r');
+            var secondOperation = lookup(defaultEnvironment, 'c' + label.slice(1) + 'r');
+            (function (firstOperation, secondOperation) {
+                set(defaultEnvironment, 'c' + label + 'r', function (pair) { return firstOperation(secondOperation(pair)); });
+            })(firstOperation, secondOperation);
         }
     }
 
@@ -253,13 +269,13 @@
     // TODO: Do special forms really need a separate lookup table?
     specialForms = {};
 
-    specialForms.quote = function (environments, list) {
+    specialForms.quote = function (environment, list) {
         return list.head;
     };
 
-    var createFunction = function (closingEnvironments, formalParameters, body) {
+    var createFunction = function (closingEnvironment, formalParameters, body) {
         return {
-            closingEnvironments: closingEnvironments,
+            closingEnvironment: closingEnvironment,
             formalParameters: formalParameters,
             body: body
         };
@@ -269,7 +285,7 @@
         return o.formalParameters && o.body;
     }
 
-    specialForms.lambda = function (environments, list) {
+    specialForms.lambda = function (environment, list) {
         var parameters = list.head;
         var identifierSet = {};
         var identifiers = [];
@@ -287,10 +303,10 @@
             identifierSet[identifier] = true;
         }
 
-        return createFunction(environments, identifiers, list.tail);
+        return createFunction(environment, identifiers, list.tail);
     };
 
-    specialForms.define = function (environments, list) {
+    specialForms.define = function (environment, list) {
         var first = list.head;
         if (isList(first)) {
             // Function: (define (name arg1 arg2 ...) exp1 exp2 ...)
@@ -299,7 +315,7 @@
                 throw 'define: No identifier supplied'
             }
 
-            return specialForms.define(environments, createList(first.head, appendList(createList('lambda', first.tail), list.tail)));
+            return specialForms.define(environment, createList(first.head, appendList(createList('lambda', first.tail), list.tail)));
         } else {
             // Variable: name
             var identifier = parseIdentifier(list.head);
@@ -307,15 +323,14 @@
                 throw 'define: Invalid identifier: ' + list.head;
             }
 
-            environments[0][identifier] = evaluateInternal(environments, list.tail.head);
+            set(environment, identifier, evaluateInternal(environment, list.tail.head));
         }
     };
 
     var createLet = function (sequential) {
-        return function (environments, list) {
+        return function (environment, list) {
             // Evaluate all the expressions and bind the values
-            var localEnvironment = {};
-            var localEnvironments = [localEnvironment].concat(environments);
+            var localEnvironment = createPair({}, environment);
             for (var bindings = list.head; bindings; bindings = bindings.tail) {
                 var binding = bindings.head;
                 var identifier = parseIdentifier(binding.head);
@@ -325,14 +340,14 @@
 
                 var initializeExpression = binding.tail.head;
                 if (initializeExpression) {
-                    localEnvironment[identifier] = evaluateInternal(sequential ? localEnvironments : environments, initializeExpression);
+                    set(localEnvironment, identifier, evaluateInternal(sequential ? localEnvironment : environment, initializeExpression));
                 } else {
-                    localEnvironment[identifier] = null;
+                    set(localEnvironment, identifier, null);
                 }
             }
     
             // Execute the body
-            return evaluateSequence(localEnvironments, list.tail);
+            return evaluateSequence(localEnvironment, list.tail);
         };
     };
 
@@ -340,34 +355,34 @@
     specialForms['let*'] = createLet(true);
     // TODO: letrec?
 
-    specialForms.cond = function (environments, list) {
+    specialForms.cond = function (environment, list) {
         var result;
         for (; list; list = list.tail) {
             var clause = list.head;
             var predicate = clause.head;
             var consequent = clause.tail.head;
-            if (predicate === 'else' || evaluateInternal(environments, predicate) === true) {
-                return evaluateInternal(environments, consequent);
+            if (predicate === 'else' || evaluateInternal(environment, predicate) === true) {
+                return evaluateInternal(environment, consequent);
             }
         }
         return result;
     };
 
-    specialForms['if'] = function (environments, list) {
+    specialForms['if'] = function (environment, list) {
         var predicate = list.head;
         var consequent = list.tail.head;
-        if (evaluateInternal(environments, predicate) === true) {
-            return evaluateInternal(environments, consequent);
+        if (evaluateInternal(environment, predicate) === true) {
+            return evaluateInternal(environment, consequent);
         } else {
             var alternative = list.tail.tail.head;
-            return evaluateInternal(environments, alternative);
+            return evaluateInternal(environment, alternative);
         }
     };
 
-    specialForms.and = function (environments, list) {
+    specialForms.and = function (environment, list) {
         var result;
         for (; list; list = list.tail) {
-            result = evaluateInternal(environments, list.head);
+            result = evaluateInternal(environment, list.head);
             if (result !== true) {
                 return false;
             }
@@ -376,9 +391,9 @@
         return result;
     };
 
-    specialForms.or = function (environments, list) {
+    specialForms.or = function (environment, list) {
         for (; list; list = list.tail) {
-            var result = evaluateInternal(environments, list.head);
+            var result = evaluateInternal(environment, list.head);
             if (result !== false) {
                 return result;
             }
@@ -387,22 +402,14 @@
         return false;
     };
 
-    specialForms.not = function (environments, list) {
-        if (evaluateInternal(environments, list.head) === false) {
+    specialForms.not = function (environment, list) {
+        if (evaluateInternal(environment, list.head) === false) {
             return true;
         }
         return false;
     };
 
-    var lookup = function (environments, identifier) {
-        var result;
-        for (var i = 0, count = environments.length; result === undefined && i < count; i++) {
-            result = environments[i][identifier];
-        }
-        return result;
-    };
-
-    var evaluateInternal = function (environments, expression) {
+    var evaluateInternal = function (environment, expression) {
         var result;
         if (expression === null) {
             return null;
@@ -417,14 +424,14 @@
                 var specialForm;
                 if (!isList(operator) && (specialForm = specialForms[operator])) {
                     // Special form
-                    return specialForm(environments, expression.tail);
+                    return specialForm(environment, expression.tail);
                 } else {
-                    var f = evaluateInternal(environments, operator);
+                    var f = evaluateInternal(environment, operator);
 
                     // Evaluate subexpressions
                     var operands = [];
                     for (var operand = expression.tail; operand; operand = operand.tail) {
-                        operands.push(evaluateInternal(environments, operand.head));
+                        operands.push(evaluateInternal(environment, operand.head));
                     }
 
                     if (typeof(f) === 'function') {
@@ -433,15 +440,14 @@
                     } else if (isFunction(f)) {
                         // Custom function
                         var formalParameters = f.formalParameters;
-                        var localEnvironment = {};
+                        var localEnvironment = createPair({}, f.closingEnvironment);
                         for (var i = 0, count1 = formalParameters.length, count2 = operands.length; i < count1 && i < count2; i++) {
-                            localEnvironment[formalParameters[i]] = operands[i];
+                            set(localEnvironment, formalParameters[i], operands[i]);
                         }
 
                         // Evaluate each expression in the local environment and return the last value
                         // TODO: Tail recursion?
-                        var localEnvironments = [localEnvironment].concat(f.closingEnvironments);
-                        result = evaluateSequence(localEnvironments, f.body);
+                        result = evaluateSequence(localEnvironment, f.body);
                     } else {
                         throw 'Non-function used as an operator: ' + f;
                     }
@@ -453,7 +459,7 @@
                     if (typeof (expression) === 'string' && expression.length >= 1 && expression[0] === '"') {
                         result = expression.slice(1, expression.length - 1);
                     } else {
-                        result = lookup(environments, expression);
+                        result = lookup(environment, expression);
 
                         if (result === undefined) {
                             throw 'No variable named: ' + expression;
@@ -466,16 +472,16 @@
         return result;
     };
 
-    var evaluateSequence = function (environments, list) {
+    var evaluateSequence = function (environment, list) {
         var result;
         for (; list; list = list.tail) {
-            result = evaluateInternal(environments, list.head);
+            result = evaluateInternal(environment, list.head);
         }
         return result;
     };
 
     var evaluate = function (environment, input) {
-        return evaluateSequence([environment || {}, defaultEnvironment], parse(tokenize(input)));
+        return evaluateSequence(environment, parse(tokenize(input)));
     };
 
     var format = function (value) {
@@ -499,11 +505,11 @@
     };
 
     var Interpreter = function () {
-        this.localEnvironment = {};
+        this.environment = createPair({}, defaultEnvironment);
     }
 
     Interpreter.prototype.evaluate = function (input) {
-        return evaluate(this.localEnvironment, input);
+        return evaluate(this.environment, input);
     };
 
     Interpreter.prototype.format = format;
