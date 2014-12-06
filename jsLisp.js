@@ -8,7 +8,7 @@
     var tokenize = function (input) {
         var output = [];
         var state = tokenizerState.initial;
-        var tokenStart = 0;
+        var token;
         for (var i = 0, count = input.length; i < count; i++) {
             switch (state) {
                 case tokenizerState.initial:
@@ -26,12 +26,12 @@
 
                             case '"':
                                 state = tokenizerState.inString;
-                                tokenStart = i;
+                                token = input[i];
                                 break;
 
                             default:
                                 state = tokenizerState.inToken;
-                                tokenStart = i;
+                                token = input[i];
                                 break;
                         }
                     }
@@ -43,15 +43,19 @@
                             case '(':
                             case ')':
                             case '\'':
-                                output.push(input.slice(tokenStart, i));
+                                output.push(token);
                                 output.push(input[i]);
                                 state = tokenizerState.initial;
                                 break;
 
                             case ' ':
                             case '\n':
-                                output.push(input.slice(tokenStart, i));
+                                output.push(token);
                                 state = tokenizerState.initial;
+                                break;
+
+                            default:
+                                token += input[i];
                                 break;
                         }
                     }
@@ -61,21 +65,15 @@
                     {
                         switch (input[i]) {
                             case '"':
-                                // Handle escape characters
-                                var text = '';
-                                for (var j = tokenStart; j <= i; j++) {
-                                    var character = input[j];
-                                    if (character !== '\\') {
-                                        text += character;
-                                    }
-                                }
-
-                                output.push(text);
+                                output.push(token);
                                 state = tokenizerState.initial;
                                 break;
 
                             case '\\':
-                                i++;
+                                token += input[++i];
+                                break;
+
+                            default:
                                 break;
                         }
                     }
@@ -85,7 +83,7 @@
 
         switch (state) {
             case tokenizerState.inToken:
-                output.push(input.slice(tokenStart));
+                output.push(token);
                 break;
         
             case tokenizerState.inString:
@@ -134,10 +132,9 @@
 
     var parseRecursive = function (input, depth, state) {
         if (state.index < input.length) {
-            var token = input[state.index++];
-            var node = token;
-            if (token.length === 1) {
-                switch (token[0]) {
+            var node = input[state.index++];
+            if (node.length === 1) {
+                switch (node[0]) {
                     case '(':
                         node = parseRecursive(input, depth + 1, state);
                         break;
@@ -273,21 +270,12 @@
         return list.head;
     };
 
-    var createFunction = function (closingEnvironment, formalParameters, body) {
-        return {
-            closingEnvironment: closingEnvironment,
-            formalParameters: formalParameters,
-            body: body
-        };
-    };
-
     var isFunction = function (o) {
         return o.formalParameters && o.body;
     }
 
     specialForms.lambda = function (environment, list) {
         var parameters = list.head;
-        var identifierSet = {};
         var identifiers = [];
         for (var i = 0, parameter = parameters; parameter; parameter = parameter.tail) {
             var identifier = parseIdentifier(parameter.head);
@@ -295,15 +283,14 @@
                 throw 'Invalid identifier: ' + parameter.head;
             }
         
-            if (identifier in identifierSet) {
-                throw 'Duplicate formal parameter: ' + identifier;
-            }
-        
             identifiers[i++] = identifier;
-            identifierSet[identifier] = true;
         }
 
-        return createFunction(environment, identifiers, list.tail);
+        return {
+            closingEnvironment: environment,
+            formalParameters: identifiers,
+            body: list.tail
+        };
     };
 
     specialForms.define = function (environment, list) {
@@ -460,7 +447,6 @@
                         result = expression.slice(1, expression.length - 1);
                     } else {
                         result = lookup(environment, expression);
-
                         if (result === undefined) {
                             throw 'No variable named: ' + expression;
                         }
