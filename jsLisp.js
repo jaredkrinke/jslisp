@@ -174,12 +174,19 @@
         environment.head[key] = value;
     };
 
-    var lookup = function (environment, identifier) {
-        var result;
-        for (; result === undefined && environment; environment = environment.tail) {
-            result = environment.head[identifier];
+    var lookupEnvironment = function (environment, identifier) {
+        for (; environment; environment = environment.tail) {
+            if (environment.head[identifier] !== undefined) {
+                return environment;
+            }
         }
-        return result;
+    };
+
+    var lookup = function (environment, identifier) {
+        environment = lookupEnvironment(environment, identifier);
+        if (environment) {
+            return environment.head[identifier];
+        }
     };
 
     var createArithmeticFunction = function (identity, apply) {
@@ -382,6 +389,18 @@
         not: function (environment, list) {
             return evaluateInternal(environment, list.head) === false;
         },
+
+        'set!': function (environment, list) {
+            var identifier = parseIdentifier(list.head);
+            var environment = lookupEnvironment(environment, identifier);
+            if (environment) {
+                set(environment, identifier, evaluateInternal(environment, list.tail.head));
+            } else {
+                throw 'Undefined variable: ' + identifier;
+            }
+        },
+
+        begin: function (environment, list) { return evaluateSequence(environment, list); },
     };
 
     var evaluateInternal = function (environment, expression) {

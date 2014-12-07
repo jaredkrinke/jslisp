@@ -237,6 +237,18 @@ test('2.2.2', [
     ['(scale-tree (list 1 (list 2 (list 3 4) 5) (list 6 7)) 10)', createList(10, createList(20, createList(30, 40), 50), createList(60, 70))],
 ]);
 
+test('Mutation', [
+    ['(define x 1)'],
+    ['(define get-x (lambda () x))'],
+    ['x', 1],
+    ['(get-x)', 1],
+    ['(set! x 2)'],
+    ['x', 2],
+    ['(get-x)', 2],
+    ['(begin 1 2 3)', 3],
+    ['(begin (set! x 3) x)', 3],
+]);
+
 //test('', [
 //    ['', ],
 //]);
