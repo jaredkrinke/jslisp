@@ -130,29 +130,31 @@
         return o === null || isPair(o);
     };
 
-    var parseRecursive = function (input, depth, state) {
+    var parseRecursive = function (input, state, single) {
         if (state.index < input.length) {
             var node = input[state.index++];
             if (node.length === 1) {
                 switch (node[0]) {
                     case '(':
-                        node = parseRecursive(input, depth + 1, state);
+                        state.depth++;
+                        node = parseRecursive(input, state);
                         break;
 
                     case ')':
-                        if (depth <= 0) {
+                        state.depth--;
+                        if (state.depth < 0) {
                             throw 'Extra ")"';
                         }
                         return null;
 
                     case '\'':
-                        node = createPair('quote', parseRecursive(input, depth, state));
+                        node = createList('quote', parseRecursive(input, state, true));
                         break;
                 }
             }
 
-            return createPair(node, parseRecursive(input, depth, state));
-        } else if (depth > 0) {
+            return single ? node : createPair(node, parseRecursive(input, state));
+        } else if (state.depth > 0) {
             throw 'Missing ")"';
         }
 
@@ -160,7 +162,7 @@
     };
 
     var parse = function (input) {
-        return parseRecursive(input, 0, { index: 0 });
+        return parseRecursive(input, { depth: 0, index: 0 });
     };
 
     var identifierPattern = /[^0-9,#();"'`|[\]{}][^,#();"'`|[\]{}]*/i;
@@ -208,6 +210,7 @@
 
             // Symbols
             'eq?': function (a, b) { return a === b; },
+            'symbol?': function (a) { return parseIdentifier(a) !== null; },
             'true': true,
             'false': false,
 
