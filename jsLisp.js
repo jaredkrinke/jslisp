@@ -249,57 +249,9 @@
         }
     }
 
-    // Special forms
-    // TODO: Do special forms really need a separate lookup table?
-    specialForms = {};
-
-    specialForms.quote = function (environment, list) {
-        return list.head;
-    };
-
     var isFunction = function (o) {
         return o.formalParameters && o.body;
     }
-
-    specialForms.lambda = function (environment, list) {
-        var parameters = list.head;
-        var identifiers = [];
-        for (var i = 0, parameter = parameters; parameter; parameter = parameter.tail) {
-            var identifier = parseIdentifier(parameter.head);
-            if (!identifier) {
-                throw 'Invalid identifier: ' + parameter.head;
-            }
-        
-            identifiers[i++] = identifier;
-        }
-
-        return {
-            closingEnvironment: environment,
-            formalParameters: identifiers,
-            body: list.tail
-        };
-    };
-
-    specialForms.define = function (environment, list) {
-        var first = list.head;
-        if (isList(first)) {
-            // Function: (define (name arg1 arg2 ...) exp1 exp2 ...)
-            // Translate to: (define name (lambda (arg1 arg2 ...) exp1 exp2 ...))
-            if (first.tail === null) {
-                throw 'define: No identifier supplied'
-            }
-
-            return specialForms.define(environment, createList(first.head, appendList(createList('lambda', first.tail), list.tail)));
-        } else {
-            // Variable: name
-            var identifier = parseIdentifier(list.head);
-            if (!identifier) {
-                throw 'define: Invalid identifier: ' + list.head;
-            }
-
-            set(environment, identifier, evaluateInternal(environment, list.tail.head));
-        }
-    };
 
     var createLet = function (sequential) {
         return function (environment, list) {
@@ -325,62 +277,105 @@
         };
     };
 
-    specialForms.let = createLet(false);
-    specialForms['let*'] = createLet(true);
-    // TODO: letrec?
+    // Special forms
+    specialForms = {
+        quote: function (environment, list) {
+            return list.head;
+        },
 
-    specialForms.cond = function (environment, list) {
-        var result;
-        for (; list; list = list.tail) {
-            var clause = list.head;
-            var predicate = clause.head;
-            var consequent = clause.tail.head;
-            if (predicate === 'else' || evaluateInternal(environment, predicate) === true) {
+        lambda: function (environment, list) {
+            var parameters = list.head;
+            var identifiers = [];
+            for (var i = 0, parameter = parameters; parameter; parameter = parameter.tail) {
+                var identifier = parseIdentifier(parameter.head);
+                if (!identifier) {
+                    throw 'Invalid identifier: ' + parameter.head;
+                }
+            
+                identifiers[i++] = identifier;
+            }
+    
+            return {
+                closingEnvironment: environment,
+                formalParameters: identifiers,
+                body: list.tail
+            };
+        },
+
+        define: function (environment, list) {
+            var first = list.head;
+            if (isList(first)) {
+                // Function: (define (name arg1 arg2 ...) exp1 exp2 ...)
+                // Translate to: (define name (lambda (arg1 arg2 ...) exp1 exp2 ...))
+                if (first.tail === null) {
+                    throw 'define: No identifier supplied'
+                }
+    
+                return specialForms.define(environment, createList(first.head, appendList(createList('lambda', first.tail), list.tail)));
+            } else {
+                // Variable: name
+                var identifier = parseIdentifier(list.head);
+                if (!identifier) {
+                    throw 'define: Invalid identifier: ' + list.head;
+                }
+    
+                set(environment, identifier, evaluateInternal(environment, list.tail.head));
+            }
+        },
+
+        let: createLet(false),
+        'let*': createLet(true),
+
+        cond: function (environment, list) {
+            var result;
+            for (; list; list = list.tail) {
+                var clause = list.head;
+                var predicate = clause.head;
+                var consequent = clause.tail.head;
+                if (predicate === 'else' || evaluateInternal(environment, predicate) === true) {
+                    return evaluateInternal(environment, consequent);
+                }
+            }
+            return result;
+        },
+
+        'if': function (environment, list) {
+            var predicate = list.head;
+            var consequent = list.tail.head;
+            if (evaluateInternal(environment, predicate) === true) {
                 return evaluateInternal(environment, consequent);
+            } else {
+                var alternative = list.tail.tail.head;
+                return evaluateInternal(environment, alternative);
             }
-        }
-        return result;
-    };
+        },
 
-    specialForms['if'] = function (environment, list) {
-        var predicate = list.head;
-        var consequent = list.tail.head;
-        if (evaluateInternal(environment, predicate) === true) {
-            return evaluateInternal(environment, consequent);
-        } else {
-            var alternative = list.tail.tail.head;
-            return evaluateInternal(environment, alternative);
-        }
-    };
-
-    specialForms.and = function (environment, list) {
-        var result;
-        for (; list; list = list.tail) {
-            result = evaluateInternal(environment, list.head);
-            if (result !== true) {
-                return false;
+        and: function (environment, list) {
+            var result;
+            for (; list; list = list.tail) {
+                result = evaluateInternal(environment, list.head);
+                if (result !== true) {
+                    return false;
+                }
             }
-        }
+    
+            return result;
+        },
 
-        return result;
-    };
-
-    specialForms.or = function (environment, list) {
-        for (; list; list = list.tail) {
-            var result = evaluateInternal(environment, list.head);
-            if (result !== false) {
-                return result;
+        or: function (environment, list) {
+            for (; list; list = list.tail) {
+                var result = evaluateInternal(environment, list.head);
+                if (result !== false) {
+                    return result;
+                }
             }
-        }
+    
+            return false;
+        },
 
-        return false;
-    };
-
-    specialForms.not = function (environment, list) {
-        if (evaluateInternal(environment, list.head) === false) {
-            return true;
-        }
-        return false;
+        not: function (environment, list) {
+            return evaluateInternal(environment, list.head) === false;
+        },
     };
 
     var evaluateInternal = function (environment, expression) {
