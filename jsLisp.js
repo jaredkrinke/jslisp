@@ -180,33 +180,22 @@
         return result;
     };
 
+    var createArithmeticFunction = function (identity, apply) {
+        return function () {
+            var result = identity;
+            for (var i = 0, count = arguments.length; i < count; i++) {
+                result = apply(result,  parseFloat(arguments[i]));
+            }
+            return result;
+        };
+    };
+
     var defaultEnvironment = createPair(
         {
             // Arithmetic
-            '+': function () {
-                var result = 0;
-                for (var i = 0, count = arguments.length; i < count; i++) {
-                    result += parseFloat(arguments[i]);
-                }
-                return result;
-            },
-
-            '-': function (a, b) {
-                if (b !== undefined) {
-                    return parseFloat(a) - parseFloat(b);
-                }
-
-                return -parseFloat(a);
-            },
-
-            '*': function () {
-                var result = 1;
-                for (var i = 0, count = arguments.length; i < count; i++) {
-                    result *= parseFloat(arguments[i]);
-                }
-                return result;
-            },
-
+            '+': createArithmeticFunction(0, function (accumulator, value) { return accumulator + value; }),
+            '-': function (a, b) { return (b === undefined) ? -parseFloat(a) : parseFloat(a) - parseFloat(b); },
+            '*': createArithmeticFunction(1, function (accumulator, value) { return accumulator * value; }),
             '/': function (a, b) { return parseFloat(a) / parseFloat(b); },
             remainder: function (a, b) { return parseFloat(a) % parseFloat(b); },
             random: function (n) { return Math.floor(Math.random() * n); },
@@ -229,9 +218,7 @@
             nil: null,
             'null?': function (x) { return x === null; },
             'pair?': function (x) { return isPair(x); },
-            list: function () {
-                return createList.apply(null, arguments);
-            },
+            list: function () { return createList.apply(null, arguments); },
             // Note: Continued below
 
             // Output
