@@ -208,6 +208,9 @@
             '<=': function (a, b) { return parseFloat(a) <= parseFloat(b); },
             '<': function (a, b) { return parseFloat(a) < parseFloat(b); },
 
+            'number?': function (a) { return typeof(a) === 'number'; },
+            // TODO: string? (need a way to differentiate identifiers from general strings
+
             // Symbols
             'eq?': function (a, b) { return a === b; },
             'symbol?': function (a) { return parseIdentifier(a) !== null; },
