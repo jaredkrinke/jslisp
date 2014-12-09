@@ -237,6 +237,14 @@ test('2.2.2', [
     ['(scale-tree (list 1 (list 2 (list 3 4) 5) (list 6 7)) 10)', createList(10, createList(20, createList(30, 40), 50), createList(60, 70))],
 ]);
 
+test('2.2.3', [
+    ['(define (odd? x) (= 0 (remainder x 2)))'],
+    ['(define (square x) (* x x))'],
+    ['(define (sum-odd-squares tree) (cond ((null? tree) 0)  ((not (pair? tree)) (if (odd? tree) (square tree) 0)) (else (+ (sum-odd-squares (car tree)) (sum-odd-squares (cdr tree))))))'],
+    ['(define (even-fibs n) (define (next k) (if (> k n) nil (let ((f (fib k))) (if (even? f) (cons f (next (+ k 1))) (next (+ k 1)))))) (next 0))'],
+    // TODO
+]);
+
 test('Mutation', [
     ['(define x 1)'],
     ['(define get-x (lambda () x))'],
