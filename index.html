@@ -12,17 +12,8 @@ $(function () {
     var execute = $('#execute');
 
     // Create code editor for the input
-    var editor = CodeMirror.fromTextArea(input.get(0),
-        {
-            mode: 'scheme',
-            autofocus: true
-        });
-
-    // Set up basic evaluation and output
-    var interpreter = new JSLisp.Interpreter();
-    execute.click(function (e) {
-        e.preventDefault();
-
+    var editor;
+    var evaluate = function () {
         var outputText;
         try {
             var inputText = editor.getValue();
@@ -35,15 +26,33 @@ $(function () {
         }
 
         output.val(outputText);
+    };
+
+    // Set up basic evaluation and output
+    var interpreter = new JSLisp.Interpreter();
+    execute.click(function (e) {
+        e.preventDefault();
+        evaluate();
     });
+
+    editor = CodeMirror.fromTextArea(input.get(0),
+        {
+            mode: 'scheme',
+            autofocus: true,
+            extraKeys: {
+                'Ctrl-Enter': evaluate
+            }
+        });
 });
 </script>
 </head>
 <body>
 
 <h3>Input</h3>
-<textarea id="input"></textarea>
-<button id="execute">Execute</button>
+<div style="border-width: 1px; border-color: black; border-style: solid; margin: 1em 0px;">
+    <textarea id="input"></textarea>
+</div>
+<button id="execute">Execute</button> (or press Ctrl+Enter)
 
 <h3>Output</h3>
 <textarea id="output" style="width: 100%; height: 5em;"></textarea>
