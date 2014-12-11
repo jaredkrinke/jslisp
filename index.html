@@ -1,3 +1,4 @@
+<html>
 <head>
 <title>Editor test</title>
 <script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
@@ -45,18 +46,61 @@ $(function () {
         });
 });
 </script>
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0px;
+            padding: 0px;
+        }
+
+        #base {
+            display: table;
+            width: 100%;
+            height: 100%;
+        }
+
+        div.top-level {
+            display: table-row;
+        }
+
+        div.max {
+            height: 100%;
+        }
+
+        div.min {
+            height: auto;
+        }
+
+        #output {
+            width: 100%;
+            height: 5em;
+            background: #f0f0f0;
+            border: 1px solid black;
+        }
+
+        .CodeMirror {
+            background: #e0e0e0;
+            border: 1px solid black;
+            height: 100%;
+        }
+    </style>
 </head>
 <body>
+    <section id="base">
+        <div class="top-level min">
+            <h3>Input</h3>
+        </div>
+        <div class="top-level max">
+            <textarea id="input"></textarea>
+        </div>
+        <div class="top-level-min">
+            <p><button id="execute">Execute</button> (or press Ctrl+Enter)</p>
 
-<h3>Input</h3>
-<div style="border-width: 1px; border-color: black; border-style: solid; margin: 1em 0px;">
-    <textarea id="input"></textarea>
-</div>
-<button id="execute">Execute</button> (or press Ctrl+Enter)
-
-<h3>Output</h3>
-<textarea id="output" style="width: 100%; height: 5em;"></textarea>
-
+            <h3>Output</h3>
+            <textarea id="output" readonly="readonly"></textarea>
+        </div>
+    </section>
 </body>
 </html>
 
