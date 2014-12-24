@@ -9,6 +9,7 @@
         var output = [];
         var state = tokenizerState.initial;
         var token;
+        // TODO: Implement comments
         for (var i = 0, count = input.length; i < count; i++) {
             switch (state) {
                 case tokenizerState.initial:
@@ -22,6 +23,7 @@
 
                             case ' ':
                             case '\n':
+                            case '\r':
                                 break;
 
                             case '"':
@@ -50,6 +52,7 @@
 
                             case ' ':
                             case '\n':
+                            case '\r':
                                 output.push(token);
                                 state = tokenizerState.initial;
                                 break;
