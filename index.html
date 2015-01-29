@@ -55,10 +55,21 @@ $(function () {
 
     // Attach editor to code samples
     var editorModal = $('#editorModal');
-    var showEditor = function (text) {
-        editorModal.modal('show');
-        editor.setValue(text);
-    };
+    var showEditor = (function () {
+        var newText = '';
+        editorModal.on('shown.bs.modal', function () {
+            editor.setValue(newText.trim());
+            editor.focus();
+            editor.execCommand('goDocEnd');
+        });
+
+        return function (text) {
+            editorModal.modal('show');
+            if (text !== undefined) {
+                newText = text;
+            }
+        };
+    })();
 
     // TODO: Direct descendants only
     $('body pre').click(function (e) {
@@ -66,7 +77,7 @@ $(function () {
     });
 
     $('#editorButton').click(function () {
-        showEditor('test');
+        showEditor();
     });
 });
 </script>
