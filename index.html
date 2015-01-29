@@ -1,93 +1,99 @@
-<html>
+<!DOCTYPE html>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="en">
 <head>
-<title>Editor test</title>
+<title>JS Lisp</title>
 <script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+
 <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/codemirror/4.8.0/codemirror.min.css">
 <script src="http://cdnjs.cloudflare.com/ajax/libs/codemirror/4.8.0/codemirror.js"></script>
 <script src="http://cdnjs.cloudflare.com/ajax/libs/codemirror/4.8.0/mode/scheme/scheme.min.js"></script>
+
 <script src="jsLisp.js"></script>
 <script>
-$(function () {
-    var input = $('#input');
-    var output = $('#output');
-    var execute = $('#execute');
-
-    // Create code editor for the input
-    var editor;
-    var evaluate = function () {
-        var outputText;
-        try {
-            var inputText = editor.getValue();
-            var result = interpreter.evaluate(inputText);
-            if (result !== undefined) {
-                outputText = interpreter.format(result);
-            }
-        } catch (e) {
-            outputText = e.toString();
-        }
-
-        output.val(outputText);
-    };
-
-    // Set up basic evaluation and output
-    var interpreter = new JSLisp.Interpreter();
-    execute.click(function (e) {
-        e.preventDefault();
-        evaluate();
-    });
-
-    editor = CodeMirror.fromTextArea(input.get(0),
-        {
-            mode: 'scheme',
-            autofocus: true,
-            extraKeys: {
-                'Ctrl-Enter': evaluate
-            }
-        });
-});
+//$(function () {
+//    var input = $('#input');
+//    var output = $('#output');
+//    var execute = $('#execute');
+//
+//    // Create code editor for the input
+//    var editor;
+//    var evaluate = function () {
+//        var outputText;
+//        try {
+//            var inputText = editor.getValue();
+//            var result = interpreter.evaluate(inputText);
+//            if (result !== undefined) {
+//                outputText = interpreter.format(result);
+//            }
+//        } catch (e) {
+//            outputText = e.toString();
+//        }
+//
+//        output.val(outputText);
+//    };
+//
+//    // Set up basic evaluation and output
+//    var interpreter = new JSLisp.Interpreter();
+//    execute.click(function (e) {
+//        e.preventDefault();
+//        evaluate();
+//    });
+//
+//    editor = CodeMirror.fromTextArea(input.get(0),
+//        {
+//            mode: 'scheme',
+//            autofocus: true,
+//            extraKeys: {
+//                'Ctrl-Enter': evaluate
+//            }
+//        });
+//});
 </script>
     <style>
-        html, body {
-            width: 100%;
-            height: 100%;
-            margin: 0px;
-            padding: 0px;
-        }
-
-        #base {
-            display: table;
-            width: 100%;
-            height: 100%;
-        }
-
-        div.top-level {
-            display: table-row;
-        }
-
-        div.max {
-            height: 100%;
-        }
-
-        div.min {
-            height: auto;
-        }
-
-        #output {
-            width: 100%;
-            height: 5em;
-            background: #f0f0f0;
-            border: 1px solid black;
-        }
-
         .CodeMirror {
             background: #e0e0e0;
             border: 1px solid black;
             height: 100%;
         }
+
+        pre.output {
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
-    <section id="base">
+<div class="container">
+
+<h1>JS Lisp</h1>
+<p>This is a test of JS Lisp in the browser.</p>
+<p>Definitions sample:</p>
+<ul>
+    <li><strong>combination</strong>, is a thing
+    <li><strong>something else</strong>, is a another thing
+</ul>
+<p>More text goes here.</p>
+<h2>Subsection</h2>
+<p>Body</p>
+<pre>
+(+ 1 2)
+</pre>
+<p>Results in:</p>
+<blockquote><pre>3</pre></blockquote>
+<p>Multi-line</p>
+<pre>
+(+ (* 3
+      (+ 1 2))
+   1)
+</pre>
+<blockquote><pre>10</pre></blockquote>
+
+<!--
+<section id="base">
         <div class="top-level min">
             <h3>Input</h3>
         </div>
@@ -101,6 +107,9 @@ $(function () {
             <textarea id="output" readonly="readonly"></textarea>
         </div>
     </section>
+-->
+
+</div>
 </body>
 </html>
 
