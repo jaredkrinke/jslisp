@@ -15,44 +15,60 @@
 
 <script src="jsLisp.js"></script>
 <script>
-//$(function () {
-//    var input = $('#input');
-//    var output = $('#output');
-//    var execute = $('#execute');
-//
-//    // Create code editor for the input
-//    var editor;
-//    var evaluate = function () {
-//        var outputText;
-//        try {
-//            var inputText = editor.getValue();
-//            var result = interpreter.evaluate(inputText);
-//            if (result !== undefined) {
-//                outputText = interpreter.format(result);
-//            }
-//        } catch (e) {
-//            outputText = e.toString();
-//        }
-//
-//        output.val(outputText);
-//    };
-//
-//    // Set up basic evaluation and output
-//    var interpreter = new JSLisp.Interpreter();
-//    execute.click(function (e) {
-//        e.preventDefault();
-//        evaluate();
-//    });
-//
-//    editor = CodeMirror.fromTextArea(input.get(0),
-//        {
-//            mode: 'scheme',
-//            autofocus: true,
-//            extraKeys: {
-//                'Ctrl-Enter': evaluate
-//            }
-//        });
-//});
+$(function () {
+    // Set up the editor
+    var input = $('#editorInput');
+    var output = $('#editorOutput');
+    var execute = $('#editorExecute');
+
+    // Create code editor for the input
+    var editor;
+    var evaluate = function () {
+        var outputText;
+        try {
+            var inputText = editor.getValue();
+            var result = interpreter.evaluate(inputText);
+            if (result !== undefined) {
+                outputText = interpreter.format(result);
+            }
+        } catch (e) {
+            outputText = e.toString();
+        }
+
+        output.val(outputText);
+    };
+
+    // Set up basic evaluation and output
+    var interpreter = new JSLisp.Interpreter();
+    execute.click(function (e) {
+        e.preventDefault();
+        evaluate();
+    });
+
+    editor = CodeMirror.fromTextArea(input.get(0),
+        {
+            mode: 'scheme',
+            extraKeys: {
+                'Ctrl-Enter': evaluate
+            }
+        });
+
+    // Attach editor to code samples
+    var editorModal = $('#editorModal');
+    var showEditor = function (text) {
+        editorModal.modal('show');
+        editor.setValue(text);
+    };
+
+    // TODO: Direct descendants only
+    $('body pre').click(function (e) {
+        showEditor($(this).text());
+    });
+
+    $('#editorButton').click(function () {
+        showEditor('test');
+    });
+});
 </script>
     <style>
         .CodeMirror {
@@ -69,7 +85,7 @@
 <body>
 <div class="container">
 
-<h1>JS Lisp</h1>
+<h2>JS Lisp</h2>
 <p>This is a test of JS Lisp in the browser.</p>
 <p>Definitions sample:</p>
 <ul>
@@ -77,7 +93,7 @@
     <li><strong>something else</strong>, is a another thing
 </ul>
 <p>More text goes here.</p>
-<h2>Subsection</h2>
+<h3>Subsection</h3>
 <p>Body</p>
 <pre>
 (+ 1 2)
@@ -91,6 +107,28 @@
    1)
 </pre>
 <blockquote><pre>10</pre></blockquote>
+<button id="editorButton" type="button" class="btn btn-default">Launch editor</button>
+
+<div id="editorModal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">Editor</h4>
+            </div>
+            <div class="modal-body">
+                <textarea id="editorInput" class="form-control"></textarea>
+            </div>
+            <div class="modal-body">
+                <textarea id="editorOutput" class="form-control"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button id="editorExecute" type="button" class="btn btn-primary">Execute</button>
+                <button id="editorDismiss" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!--
 <section id="base">
