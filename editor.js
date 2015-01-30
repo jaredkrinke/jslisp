@@ -70,9 +70,5 @@ $(function () {
                 .removeClass('hidden')
                 .click(show));
     });
-
-    $('#editorButton').click(function () {
-        showEditor();
-    });
 });
 
