@@ -56,7 +56,7 @@ $(function () {
 
     // Attach editor to code samples (via double-click and a button)
     var tryItButton = $('#tryItButton');
-    $('pre').each(function () {
+    $('div.container > pre').each(function () {
         var element = $(this);
         var text = element.text();
         var show = function () {
