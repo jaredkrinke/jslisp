@@ -36,7 +36,7 @@ $(function () {
             }
         });
 
-    // Attach editor to code samples
+    // Function for popping up the code editor
     var editorModal = $('#editorModal');
     var showEditor = (function () {
         var newText = '';
@@ -54,8 +54,21 @@ $(function () {
         };
     })();
 
-    $('body > div.container > pre').click(function (e) {
-        showEditor($(this).text());
+    // Attach editor to code samples (via double-click and a button)
+    var tryItButton = $('#tryItButton');
+    $('pre').each(function () {
+        var element = $(this);
+        var text = element.text();
+        var show = function () {
+            showEditor(text);
+        };
+
+        element
+            .dblclick(show)
+            .prepend(tryItButton
+                .clone()
+                .removeClass('hidden')
+                .click(show));
     });
 
     $('#editorButton').click(function () {

@@ -26,6 +26,8 @@
         pre.output {
             font-style: italic;
         }
+
+
     </style>
 </head>
 <body>
@@ -45,14 +47,18 @@
 (+ 1 2)
 </pre>
 <p>Results in:</p>
-<blockquote><pre>3</pre></blockquote>
+<blockquote>3</blockquote>
 <p>Multi-line</p>
 <pre>
 (+ (* 3
       (+ 1 2))
    1)
 </pre>
-<blockquote><pre>10</pre></blockquote>
+<blockquote>10</blockquote>
+
+<pre>(+ 1 2)</pre>
+<button id="tryItButton" class="hidden btn btn-info btn-xs pull-right">Try it</button>
+
 <button id="editorButton" type="button" class="btn btn-default">Launch editor</button>
 
 <div id="editorModal" class="modal fade" tabindex="-1" role="dialog">
@@ -60,12 +66,14 @@
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title">Editor</h4>
+                <h4 class="modal-title">Scheme Interpreter</h4>
             </div>
             <div class="modal-body">
+                <label for="editorInput">Input</label>
                 <textarea id="editorInput" class="form-control"></textarea>
             </div>
             <div class="modal-body">
+                <label for="editorOutput">Output</label>
                 <textarea id="editorOutput" class="form-control"></textarea>
             </div>
             <div class="modal-footer">
