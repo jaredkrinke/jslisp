@@ -54,7 +54,9 @@ $(function () {
         };
     })();
 
-    $('#launchEditor').click(showEditor);
+    $('#launchEditor').click(function () {
+        showEditor(' ');
+    });
 
     // Attach editor to code samples (via double-click and a button)
     var tryItButton = $('#tryItButton');
