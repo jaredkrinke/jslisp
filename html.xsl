@@ -22,21 +22,7 @@
 
 <script src="jsLisp.js"></script>
 <script src="editor.js"></script>
-
-    <style>
-        .CodeMirror {
-            background: #e0e0e0;
-            border: 1px solid black;
-        }
-
-        pre.output {
-            font-style: italic;
-        }
-
-        #editorOutput {
-            resize: none;
-        }
-    </style>
+<link rel="stylesheet" href="editor.css" />
 </head>
 <body>
 
@@ -164,7 +150,7 @@
             <xsl:with-param name="title" select="'Contents'"/>
             <xsl:with-param name="file" select="'toc.html'"/>
             <xsl:with-param name="body">
-                <ul>
+                <ul class="toc">
                     <xsl:for-each select="$annotated/content/front/section|$annotated/content/body/section">
                         <xsl:call-template name="table-of-contents-item"/>
                     </xsl:for-each>
