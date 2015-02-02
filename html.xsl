@@ -1,9 +1,12 @@
 <?xml version="1.0"?>
 <xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:doc="http://jaredkrinke.github.io/doc">
+    <xsl:variable name="toc-file" select="'toc.html'"/>
     <xsl:template name="page">
         <xsl:param name="title"/>
         <xsl:param name="file"/>
         <xsl:param name="body"/>
+        <xsl:variable name="previous" select="$pages/page[following-sibling::page[1]/@file = $file]"/>
+        <xsl:variable name="next" select="$pages/page[preceding-sibling::page[1]/@file = $file]"/>
 
             <xsl:result-document method="html" doctype-public="html" href="{$file}">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -40,6 +43,15 @@
   </div>
   
   <div class="collapse navbar-collapse" id="top-bar">
+    <ul class="nav navbar-nav">
+      <xsl:if test="count($previous) > 0">
+        <li><a href="{$previous/@file}"><xsl:text disable-output-escaping="yes"><![CDATA[&laquo;]]></xsl:text> Previous</a></li>
+      </xsl:if>
+      <li class="{if ($toc-file = $file) then ('active') else ('')}"><a href="{$toc-file}">Contents</a></li>
+      <xsl:if test="count($next) > 0">
+        <li><a href="{$next/@file}">Next <xsl:text disable-output-escaping="yes"><![CDATA[&raquo;]]></xsl:text></a></li>
+      </xsl:if>
+    </ul>
     <form class="navbar-form navbar-right">
       <button id="launchEditor" type="button" class="btn btn-default">Launch Editor</button>
     </form>
@@ -49,6 +61,18 @@
 <h1><xsl:value-of select="$title"/></h1>
 
 <xsl:copy-of select="$body"/>
+
+<nav>
+  <ul class="pager">
+    <xsl:if test="count($previous) > 0">
+      <li><a href="{$previous/@file}"><span><xsl:text disable-output-escaping="yes"><![CDATA[&laquo;]]></xsl:text> Previous</span></a></li>
+    </xsl:if>
+    <li><a href="{$toc-file}">Contents</a></li>
+    <xsl:if test="count($next) > 0">
+      <li><a href="{$next/@file}"><span>Next <xsl:text disable-output-escaping="yes"><![CDATA[&raquo;]]></xsl:text></span></a></li>
+    </xsl:if>
+  </ul>
+</nav>
 
 <button id="tryItButton" class="hidden btn btn-info btn-xs pull-right">Try it</button>
 </div>
@@ -100,10 +124,6 @@
         </xsl:copy>
     </xsl:template>
 
-    <xsl:variable name="annotated">
-        <xsl:apply-templates select="/" mode="annotate"/>
-    </xsl:variable>
-
     <xsl:variable name="lower-case" select="'abcdefghijklmnopqrstuvwxyz'"/>
     <xsl:variable name="upper-case" select="'ABCDEFGHIJKLMNOPQRSTUVWXYZ'"/>
     <xsl:variable name="file-characters" select="concat($lower-case, $upper-case, '0123456789')"/>
@@ -128,6 +148,18 @@
         <xsl:value-of select="doc:file-name(doc:numbered-title($section))"/>
     </xsl:function>
 
+    <xsl:variable name="annotated">
+        <xsl:apply-templates select="/" mode="annotate"/>
+    </xsl:variable>
+
+    <!-- Set up navigation -->
+    <xsl:variable name="pages">
+        <page file="{$toc-file}"/>
+        <xsl:for-each select="$annotated//section">
+            <page file="{doc:section-file(.)}"/>
+        </xsl:for-each>
+    </xsl:variable>
+
     <!-- Table of contents -->
     <xsl:template name="table-of-contents-item">
         <xsl:variable name="title" select="doc:numbered-title(.)"/>
@@ -147,7 +179,7 @@
     <xsl:template name="table-of-contents">
         <xsl:call-template name="page">
             <xsl:with-param name="title" select="'Contents'"/>
-            <xsl:with-param name="file" select="'toc.html'"/>
+            <xsl:with-param name="file" select="$toc-file"/>
             <xsl:with-param name="body">
                 <ul class="toc">
                     <xsl:for-each select="$annotated/content/front/section|$annotated/content/body/section">
