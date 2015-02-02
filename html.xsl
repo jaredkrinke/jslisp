@@ -51,6 +51,7 @@
 <xsl:copy-of select="$body"/>
 
 <button id="tryItButton" class="hidden btn btn-info btn-xs pull-right">Try it</button>
+</div>
 
 <div id="editorModal" class="modal fade" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg">
@@ -73,8 +74,6 @@
             </div>
         </div>
     </div>
-</div>
-
 </div>
 </body>
 </html>
