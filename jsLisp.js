@@ -209,6 +209,9 @@
             remainder: function (a, b) { return parseFloat(a) % parseFloat(b); },
             random: function (n) { return Math.floor(Math.random() * n); },
 
+            'log': function (a) { return Math.log(parseFloat(a)); },
+            'exp': function (a) { return Math.exp(parseFloat(a)); },
+
             '>': function (a, b) { return parseFloat(a) > parseFloat(b); },
             '>=': function (a, b) { return parseFloat(a) >= parseFloat(b); },
             '=': function (a, b) { return parseFloat(a) === parseFloat(b); },
@@ -223,6 +226,8 @@
             'symbol?': function (a) { return parseIdentifier(a) !== null; },
             'true': true,
             'false': false,
+            '#t': true,
+            '#f': false,
 
             // Lists
             cons: function (a, b) { return createPair(a, b); },
@@ -491,6 +496,10 @@
                 output += format(value.head);
                 output += value.tail ? ' ' : ')';
             }
+        } else if (value === true) {
+            output = '#t';
+        } else if (value === false) {
+            output = '#f';
         } else {
             output = value.toString();
         }
