@@ -192,6 +192,14 @@
         }
     };
 
+    var createFunction = function (closingEnvironment, formalParameters, body) {
+        return {
+            closingEnvironment: closingEnvironment,
+            formalParameters: formalParameters,
+            body: body
+        };
+    };
+
     var createArithmeticFunction = function (identity, apply) {
         return function () {
             var result = identity;
@@ -202,7 +210,8 @@
         };
     };
 
-    var defaultEnvironment = createPair(
+    var defaultEnvironment = createPair(null, null);
+    defaultEnvironment.head =
         {
             // Arithmetic
             '+': createArithmeticFunction(0, function (accumulator, value) { return accumulator + value; }),
@@ -244,12 +253,11 @@
 
             // Output
             display: function (x) { process.stdout.write(x.toString()); },
-            newline: function (x) { process.stdout.write('\n'); },
+            newline: createFunction(defaultEnvironment, [], createList('display', '"\n"')),
 
             // Error handling
             error: function (x) { throw x; },
-        }, null
-    );
+        };
 
     // cadr, caddr, etc. (up to a depth of 4)
     for (var depth = 2; depth <= 4; depth++) {
@@ -316,11 +324,7 @@
                 identifiers[i++] = identifier;
             }
     
-            return {
-                closingEnvironment: environment,
-                formalParameters: identifiers,
-                body: list.tail
-            };
+            return createFunction(environment, identifiers, list.tail);
         },
 
         define: function (environment, list) {
