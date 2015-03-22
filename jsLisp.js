@@ -210,6 +210,30 @@
         };
     };
 
+    var format = function (value) {
+        var output;
+        if (value === null) {
+            output = '()';
+        } else if (value.head) {
+            output = '(';
+            for (; value !== null; value = value.tail) {
+                if (value.head === undefined) {
+                    return 'Improper list';
+                }
+                
+                output += format(value.head);
+                output += value.tail ? ' ' : ')';
+            }
+        } else if (value === true) {
+            output = '#t';
+        } else if (value === false) {
+            output = '#f';
+        } else {
+            output = value.toString();
+        }
+        return output;
+    };
+
     var defaultEnvironment = createPair(null, null);
     defaultEnvironment.head =
         {
@@ -252,7 +276,7 @@
             // Note: Continued below
 
             // Output
-            display: function (x) { process.stdout.write(x.toString()); },
+            display: function (x) { process.stdout.write(format(x)); },
             newline: createFunction(defaultEnvironment, [], createList('display', '"\n"')),
 
             // Error handling
@@ -487,30 +511,6 @@
 
     var evaluate = function (environment, input) {
         return evaluateSequence(environment, parse(tokenize(input)));
-    };
-
-    var format = function (value) {
-        var output;
-        if (value === null) {
-            output = '()';
-        } else if (value.head) {
-            output = '(';
-            for (; value !== null; value = value.tail) {
-                if (value.head === undefined) {
-                    return 'Improper list';
-                }
-                
-                output += format(value.head);
-                output += value.tail ? ' ' : ')';
-            }
-        } else if (value === true) {
-            output = '#t';
-        } else if (value === false) {
-            output = '#f';
-        } else {
-            output = value.toString();
-        }
-        return output;
     };
 
     var Interpreter = function () {
