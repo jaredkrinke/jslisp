@@ -532,6 +532,10 @@
         return evaluate(this.environment, input);
     };
 
+    Interpreter.prototype.set = function (key, value) {
+        set(this.environment, key, value);
+    };
+
     Interpreter.prototype.format = format;
 
     // Exports
