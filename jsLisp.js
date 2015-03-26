@@ -68,6 +68,7 @@
                     {
                         switch (input[i]) {
                             case '"':
+                                token += input[i];
                                 output.push(token);
                                 state = tokenizerState.initial;
                                 break;
@@ -77,6 +78,7 @@
                                 break;
 
                             default:
+                                token += input[i];
                                 break;
                         }
                     }
@@ -173,6 +175,11 @@
         return (!isPair(text) && identifierPattern.test(text)) ? text : null;
     };
 
+    var stringLiteralPattern = /^".*"$/;
+    var isStringLiteral = function (value) {
+        return typeof(value) === 'string' && stringLiteralPattern.test(value);
+    };
+
     var set = function (environment, key, value) {
         environment.head[key] = value;
     };
@@ -228,6 +235,8 @@
             output = '#t';
         } else if (value === false) {
             output = '#f';
+        } else if (isStringLiteral(value)) {
+            output = value.substr(1, value.length - 2);
         } else {
             output = value.toString();
         }
@@ -483,12 +492,14 @@
                     }
                 }
             } else {
-                // Literal
+                // Literal or symbol
                 var result = parseFloat(expression);
                 if (isNaN(result)) {
-                    if (typeof (expression) === 'string' && expression.length >= 1 && expression[0] === '"') {
-                        result = expression.slice(1, expression.length - 1);
+                    if (isStringLiteral(expression)) {
+                        // String literal
+                        result = expression;
                     } else {
+                        // Symbol
                         result = lookup(environment, expression);
                         if (result === undefined) {
                             throw 'No variable named: ' + expression;
