@@ -175,7 +175,7 @@
         return (!isPair(text) && identifierPattern.test(text)) ? text : null;
     };
 
-    var stringLiteralPattern = /^".*"$/;
+    var stringLiteralPattern = /^"[\s\S]*"$/m;
     var isStringLiteral = function (value) {
         return typeof(value) === 'string' && stringLiteralPattern.test(value);
     };
