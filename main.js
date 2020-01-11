@@ -1,11 +1,13 @@
 ﻿var JSLisp = require('./jsLisp.js');
 var interpreter = new JSLisp.Interpreter();
-var input = process.stdin;
-input.setEncoding('utf8');
 
-input.on('data', function (text) {
-    var result = interpreter.evaluate(text.slice(0, text.length - 2));
-    if (result !== undefined) {
-        console.log(interpreter.format(result));
-    }
+const repl = require("repl");
+repl.start({
+    eval: function (command, context, filename, callback) {
+        const result = interpreter.evaluate(command);
+        if (result !== undefined) {
+            console.log(interpreter.format(result));
+        }
+        callback(null);
+    },
 });
